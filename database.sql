@@ -304,6 +304,20 @@ ALTER TABLE `users`
 --
 ALTER TABLE `video_providers`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- Insert admin user
+--
+INSERT INTO `users` (`name`, `email`, `password`, `role`, `remember_token`, `created_at`)
+VALUES (
+  'Admin',
+  'admin@gogoanime.com',
+  '$2y$10$HucLCTvwufDNS5MNMwcxGOTq8aHbr1o8rDQRL1cj7DiOpZXi9w5JW',
+  'admin',
+  NULL,
+  CURRENT_TIMESTAMP()
+);
+
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
