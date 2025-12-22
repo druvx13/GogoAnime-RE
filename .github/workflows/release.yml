@@ -1,0 +1,99 @@
+name: Release v1.0.0  
+  
+on:  
+  workflow_dispatch:  
+    inputs:  
+      version:  
+        description: 'Release version (e.g., 1.0.0)'  
+        required: true  
+        default: '1.0.0'  
+  
+jobs:  
+  release:  
+    runs-on: ubuntu-latest  
+    permissions:  
+      contents: write  
+        
+    steps:  
+    - name: Checkout code  
+      uses: actions/checkout@v4  
+      with:  
+        fetch-depth: 0  
+          
+    - name: Setup PHP  
+      uses: shivammathur/setup-php@v2  
+      with:  
+        php-version: '8.0'  
+        extensions: pdo, pdo_mysql, json, mbstring  
+          
+    - name: Validate PHP syntax  
+      run: |  
+        find . -name "*.php" -not -path "./vendor/*" -exec php -l {} \;  
+          
+    - name: Create release archive  
+      run: |  
+        # Create archive excluding sensitive files and git  
+        tar -czf gogoanime-${{ github.event.inputs.version }}.tar.gz \  
+          --exclude='.git' \  
+          --exclude='.github' \  
+          --exclude='app/config/config.local.php' \  
+          --exclude='*.log' \  
+          --exclude='backup_*' \  
+          --exclude='node_modules' \  
+          .  
+            
+    - name: Create and push tag  
+      run: |  
+        git config --local user.email "action@github.com"  
+        git config --local user.name "GitHub Action"  
+        git tag -a v${{ github.event.inputs.version }} -m "Release v${{ github.event.inputs.version }}"  
+        git push origin v${{ github.event.inputs.version }}  
+          
+    - name: Create GitHub Release  
+      uses: softprops/action-gh-release@v1  
+      with:  
+        tag_name: v${{ github.event.inputs.version }}  
+        name: GogoAnime-RE v${{ github.event.inputs.version }}  
+        body: |  
+          ## 🎉 First Stable Release - v${{ github.event.inputs.version }}  
+            
+          GogoAnime-RE is a vanilla PHP CMS for building anime streaming platforms with external video embedding.  
+            
+          ### ✨ Features  
+          - Content Management System for anime and episodes  
+          - User authentication and registration  
+          - Admin panel for content management  
+          - Search functionality  
+          - External video embedding support  
+          - Responsive design  
+            
+          ### 🛠️ Technology Stack  
+          - PHP 7.4+  
+          - MySQL 5.7+  
+          - Apache 2.4+  
+          - Vanilla PHP (no frameworks)  
+            
+          ### 📦 Installation  
+            
+          1. Clone repository  
+          2. Import `database.sql` into MySQL  
+          3. Configure `app/config/config.local.php`  
+          4. Set up web server  
+            
+          See [DEPLOYMENT.md](https://github.com/druvx13/GogoAnime-RE/blob/master/DEPLOYMENT.md) for detailed instructions.  
+            
+          ### ⚠️ Important Notes  
+          - This application does NOT host video files directly  
+          - Uses external video embedding (Vidstream, Doodstream)  
+          - Default admin credentials: admin@gogoanime.com / admin123 (CHANGE IMMEDIATELY)  
+            
+        files: |  
+          gogoanime-${{ github.event.inputs.version }}.tar.gz  
+          database.sql  
+          README.md  
+          DEPLOYMENT.md  
+          LICENSE  
+        draft: false  
+        prerelease: false  
+      env:  
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
