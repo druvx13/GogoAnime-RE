@@ -29,18 +29,11 @@ jobs:
     - name: Validate PHP syntax  
       run: |  
         find . -name "*.php" -not -path "./vendor/*" -exec php -l {} \;  
-          
+
     - name: Create release archive  
       run: |  
-        # Create archive excluding sensitive files and git  
-        tar -czf gogoanime-${{ github.event.inputs.version }}.tar.gz \  
-          --exclude='.git' \  
-          --exclude='.github' \  
-          --exclude='app/config/config.local.php' \  
-          --exclude='*.log' \  
-          --exclude='backup_*' \  
-          --exclude='node_modules' \  
-          .  
+        tar -czf gogoanime-${{ github.event.inputs.version }}.tar.gz --exclude='.git' --exclude='.github' --exclude='app/config/config.local.php' --exclude='*.log' --exclude='backup_*' --exclude='node_modules' --exclude='*.tar.gz' *
+
             
     - name: Create and push tag  
       run: |  
