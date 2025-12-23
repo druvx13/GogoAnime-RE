@@ -1,14 +1,27 @@
 <?php
+/**
+ * Search Results Page
+ *
+ * This page handles displaying search results when a user submits a query.
+ * It queries the `anime` table for matching titles.
+ *
+ * @package    GogoAnime Clone
+ * @subpackage Root
+ * @author     GogoAnime Clone Contributors
+ * @license    MIT License
+ */
+
 require_once('./app/config/info.php');
 require_once('./app/config/db.php');
 
 $search = isset($_GET['keyword']) ? trim($_GET['keyword']) : '';
 ?>
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="shortcut icon" href="<?=$base_url?>/assets/img/favicon.ico">
     <title>Search Result for "<?=htmlspecialchars($search)?>" - <?=$website_name?></title>
     <link rel="stylesheet" type="text/css" href="<?=$base_url?>/assets/css/style.css" />
     <script type="text/javascript" src="<?=$base_url?>/assets/js/libraries/jquery.js"></script>
@@ -30,6 +43,7 @@ $search = isset($_GET['keyword']) ? trim($_GET['keyword']) : '';
                                 <ul class="items">
                                     <?php
                                     if (!empty($search)) {
+                                        // Case-insensitive search
                                         $stmt = $conn->prepare("SELECT * FROM anime WHERE title LIKE :keyword ORDER BY title ASC");
                                         $stmt->execute(['keyword' => "%$search%"]);
                                         $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -50,8 +64,10 @@ $search = isset($_GET['keyword']) ? trim($_GET['keyword']) : '';
                                             </li>";
                                         }
                                         if (empty($results)) {
-                                            echo "<p>No results found.</p>";
+                                            echo "<li style='width:100%; text-align:center;'>No results found.</li>";
                                         }
+                                    } else {
+                                        echo "<li style='width:100%; text-align:center;'>Please enter a search term.</li>";
                                     }
                                     ?>
                                 </ul>

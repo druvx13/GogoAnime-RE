@@ -1,8 +1,25 @@
-<?php 
+<?php
+/**
+ * Home Page
+ *
+ * This is the main dashboard for the public frontend (`/home`).
+ * It displays:
+ * 1. Recently released episodes (with pagination and language filtering).
+ * 2. Search results (if a search query is present).
+ * 3. Ongoing series sidebar.
+ * 4. Genre list sidebar.
+ * 5. Top views/analytics placeholder.
+ *
+ * @package    GogoAnime Clone
+ * @subpackage Root
+ * @author     GogoAnime Clone Contributors
+ * @license    MIT License
+ */
+
 require_once('./app/config/info.php');
 require_once('./app/config/db.php');
 
-// --- NEW SEARCH LOGIC (Same as other pages) ---
+// --- SEARCH LOGIC ---
 $searchQuery = isset($_GET['keyword']) ? trim($_GET['keyword']) : '';
 $searchResults = [];
 $hasSearched = false;
@@ -10,16 +27,16 @@ $hasSearched = false;
 if ($searchQuery !== '') {
     $hasSearched = true;
     $searchTerm = '%' . $searchQuery . '%';
+    // Search anime by title
     $searchStmt = $conn->prepare("SELECT id, title FROM anime WHERE title LIKE :title ORDER BY title ASC");
     $searchStmt->bindValue(':title', $searchTerm, PDO::PARAM_STR);
     $searchStmt->execute();
     $searchResults = $searchStmt->fetchAll(PDO::FETCH_ASSOC);
 }
-// --- END NEW SEARCH LOGIC ---
+// --- END SEARCH LOGIC ---
 ?>
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
@@ -54,7 +71,7 @@ if ($searchQuery !== '') {
 
     <script type="text/javascript" src="<?=$base_url?>/assets/js/libraries/jquery.js"></script>
     <script>
-        var base_url = 'http://' . document.domain . '/';
+        var base_url = '<?=$base_url?>/';
         var base_url_cdn_api = 'https://ajax.gogocdn.net/';
         var api_anclytic = 'https://ajax.gogocdn.net/anclytic-ajax.html';
     </script>
@@ -78,7 +95,7 @@ if ($searchQuery !== '') {
                         <div class="main_body">
                             <div class="anime_name anime_list"> <!-- Reusing anime_list class for consistency -->
                                 <i class="icongec-anime_list i_pos"></i> <!-- Reusing icon for consistency -->
-                                <h2>Search Results for '<?=$searchQuery?>'</h2>
+                                <h2>Search Results for '<?=htmlspecialchars($searchQuery)?>'</h2>
                             </div>
                             <div class="anime_list_body">
                                 <ul class="listing">
@@ -88,7 +105,7 @@ if ($searchQuery !== '') {
                                         </li>
                                     <?php endforeach; ?>
                                     <?php if (empty($searchResults)): ?>
-                                        <li><p>No anime found matching '<?=$searchQuery?>'.</p></li>
+                                        <li><p>No anime found matching '<?=htmlspecialchars($searchQuery)?>'.</p></li>
                                     <?php endif; ?>
                                 </ul>
                                 <div class="clr"></div>
@@ -112,7 +129,6 @@ if ($searchQuery !== '') {
                                 <div class="anime_name recent_release">
                                     <i class="icongec-recent_release i_pos"></i>
                                     <?php
-                                    // --- MODIFIED LOGIC FOR DEFAULT (ALL LANGUAGES) ---
                                     // Determine the type from the URL, default to 0 (All) if not set
                                     $type = isset($_GET['type']) ? (int)$_GET['type'] : 0; 
                                     $subClass = ($type == 1) ? 'active' : '';
@@ -121,7 +137,7 @@ if ($searchQuery !== '') {
                                     $allClass = ($type == 0) ? 'active' : ''; // New class for "All"
                                     ?>
                                     <h2>
-                                        <a href="?type=0" class="dub <?=$allClass?>">Recent Release (All)</a> <!-- New link for All -->
+                                        <a href="?type=0" class="dub <?=$allClass?>">Recent Release (All)</a>
                                         <span style="padding:0 10px; color:#010101;">|</span>
                                         <a href="?type=1" class="dub <?=$subClass?>">SUB</a>
                                         <span style="padding:0 10px; color:#010101;">|</span>
@@ -139,12 +155,8 @@ if ($searchQuery !== '') {
                                                 $limit = 20;
                                                 $offset = ($page - 1) * $limit;
 
-                                                // Count total recent releases (episodes)
-                                                require_once('./app/config/db.php');
-
-                                                // --- MODIFIED LOGIC FOR DEFAULT (ALL LANGUAGES) ---
                                                 // Determine the language condition based on the selected type
-                                                $langConditionCount = "1=1"; // Default to show all if type is 0 or invalid
+                                                $langConditionCount = "1=1"; // Default to show all
                                                 if ($type == 1) {
                                                     $langConditionCount = "a.language = 'Sub'";
                                                 } elseif ($type == 2) {
@@ -152,7 +164,6 @@ if ($searchQuery !== '') {
                                                 } elseif ($type == 3) {
                                                     $langConditionCount = "a.language = 'Chinese'";
                                                 }
-                                                // For $type == 0 or any other value, $langConditionCount remains "1=1"
 
                                                 $countStmt = $conn->query("
                                                     SELECT COUNT(*)
@@ -164,9 +175,9 @@ if ($searchQuery !== '') {
                                                 $totalPages = ceil($totalEpisodes / $limit);
 
                                                 for ($i = 1; $i <= $totalPages; $i++) {
-                                                    if ($i > 5 && $i != $totalPages && $i != $page) continue; // Simplify for now
+                                                    // Simple pagination limiting to 5 pages shown or current page
+                                                    if ($i > 5 && $i != $totalPages && abs($i - $page) > 2) continue;
                                                     $active = ($i == $page) ? 'selected' : '';
-                                                    // Use the current type in the URL
                                                     echo "<li class='$active'><a href='?type=$type&page=$i'>$i</a></li>";
                                                 }
                                                 ?>
@@ -177,9 +188,8 @@ if ($searchQuery !== '') {
                                 <div class="last_episodes loaddub">
                                     <ul class="items">
                                         <?php
-                                          // --- MODIFIED LOGIC FOR DEFAULT (ALL LANGUAGES) ---
-                                          // Fetch recent releases (episodes) from DB with pagination and language filter
-                                          $langCondition = "1=1"; // Default to show all if type is 0 or invalid
+                                          // Fetch recent releases with pagination
+                                          $langCondition = "1=1";
                                           if ($type == 1) {
                                               $langCondition = "a.language = 'Sub'";
                                           } elseif ($type == 2) {
@@ -187,7 +197,6 @@ if ($searchQuery !== '') {
                                           } elseif ($type == 3) {
                                               $langCondition = "a.language = 'Chinese'";
                                           }
-                                          // For $type == 0 or any other value, $langCondition remains "1=1"
 
                                           $stmt = $conn->prepare("
                                               SELECT e.id, e.episode_number, e.title as ep_title, a.title as anime_title, a.image_url, a.language
@@ -235,13 +244,6 @@ if ($searchQuery !== '') {
                         </div>
                         <div class="clr"></div>
                         <!--/ Recent Release--->
-                        <!-- Featured Comedy / Romance Anime--->
-                        <div class="main_body">
-                            <div id="load_popular_ongoing">
-
-                            </div>
-                        </div>
-                        <div class="clr"></div> <!-- /Featured Comedy / Romance Anime--->
 
                         <!-- Recently Added Series--->
                         <div class="main_body none">
@@ -360,7 +362,7 @@ if ($searchQuery !== '') {
                                           $genreStmt = $conn->query("SELECT * FROM genres ORDER BY name ASC");
                                           $genres = $genreStmt->fetchAll(PDO::FETCH_ASSOC);
                                           foreach($genres as $genre) {
-                                              echo "<li><a href='genre.php?slug={$genre['slug']}' title='{$genre['name']}'>{$genre['name']}</a></li>";
+                                              echo "<li><a href='genre.php?slug=" . htmlspecialchars($genre['slug']) . "' title='" . htmlspecialchars($genre['name']) . "'>" . htmlspecialchars($genre['name']) . "</a></li>";
                                           }
                                         ?>
                                         </ul>
@@ -373,49 +375,16 @@ if ($searchQuery !== '') {
                 </section>
                 <?php endif; ?>
                 <div class="clr"></div>
-                <footer>
-                    <div class="menu_bottom">
-                        <a href="/about-us.html">
-                            <h3>Abouts us</h3>
-                        </a>
-                        <a href="/contact-us.html">
-                            <h3>Contact us</h3>
-                        </a>
-                        <a href="/privacy.html">
-                            <h3>Privacy</h3>
-                        </a>
-                    </div>
-                    <div class="croll">
-                        <div class="big"><i class="icongec-backtop"></i></div>
-                        <div class="small"><i class="icongec-backtop_mb"></i></div>
-                    </div>
-                </footer>
+                <?php require_once('./app/views/partials/footer.php'); ?>
             </div>
         </div>
     </div>
     <div id="off_light"></div>
     <div class="clr"></div>
     <div class="mask"></div>
-        <script type="text/javascript" src="<?=$base_url?>/assets/js/files/combo.js"></script>
+    <script type="text/javascript" src="<?=$base_url?>/assets/js/files/combo.js"></script>
     <script type="text/javascript" src="<?=$base_url?>/assets/js/files/video.js"></script>
     <script type="text/javascript" src="<?=$base_url?>/assets/js/files/jquery.tinyscrollbar.min.js"></script>
-<script type="text/javascript">
-$(document).ready(function () {
-  $('.btn-notice').click(function (e) {
-    $('.bg-notice').hide();
-    $(this).hide();
-  });
-});
-</script>
-<style type="text/css">
-  @media only screen and (min-width: 387px) {
-    .btn-notice {bottom:36px;}  
-  }
-  @media only screen and (max-width: 386px) {
-    .btn-notice {bottom: 52px;}
-  }
-</style>
-<div class="bg-notice" style="position:fixed;z-index:9999;background:#ffc119;bottom:0;text-align:center;color:#000;width:100%;padding:10px 0;font-weight:600;">We moved site to <a href="<?=$base_url?>" title="<?=$base_url?>" alt="Gogoanime"><?=$base_url?></a>. Please bookmark new site. Thank you!</div><div class="btn-notice" style="position:fixed;z-index:9999;background:#00a651;color:#fff;cursor:pointer;right:0;padding:3px 8px;">x</div>
     <script>
         LoadFilmOngoing(1);
     </script>
@@ -426,5 +395,4 @@ $(document).ready(function () {
         }
     </script>
 </body>
-
 </html>

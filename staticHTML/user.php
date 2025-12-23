@@ -1,23 +1,54 @@
-<?php 
+<?php
+/**
+ * User Profile Page
+ *
+ * This file renders the logged-in user's profile page. It allows users to:
+ * 1. View their account information (Name, Email, Member Since).
+ * 2. Update their display name.
+ * 3. View their list of bookmarked anime.
+ *
+ * @package    GogoAnime Clone
+ * @subpackage StaticHTML
+ * @author     GogoAnime Clone Contributors
+ * @license    MIT License
+ */
 
-session_start();
+// Start session
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 require_once('../app/config/info.php');
 require_once('../app/config/db.php');
 
+// Redirect to login if not authenticated
 if (!isset($_SESSION['user_id'])) {
     header("Location: $base_url/login.html");
     exit();
 }
 
 $user_id = $_SESSION['user_id'];
-$stmt = $conn->prepare("SELECT name, email, created_at FROM users WHERE id = :id");
-$stmt->execute(['id' => $user_id]);
-$user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+// Fetch user details
+try {
+    $stmt = $conn->prepare("SELECT name, email, created_at FROM users WHERE id = :id");
+    $stmt->execute(['id' => $user_id]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$user) {
+        // Handle edge case where session exists but user DB record is gone
+        session_destroy();
+        header("Location: $base_url/login.html");
+        exit();
+    }
+} catch(PDOException $e) {
+    die("Database error: " . $e->getMessage());
+}
 
 $error = '';
-$success = '';  
+$success = '';
 
+// Handle Profile Update
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (isset($_POST['update_profile'])) {
         $name = filter_var($_POST['name'], FILTER_SANITIZE_STRING);
@@ -33,39 +64,45 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 }
 
-// [GAP-003] Fetch Bookmarks
-$bmStmt = $conn->prepare("
-    SELECT a.id, a.title, a.image_url
-    FROM bookmarks b
-    JOIN anime a ON b.anime_id = a.id
-    WHERE b.user_id = :uid
-    ORDER BY b.created_at DESC
-");
-$bmStmt->execute(['uid' => $user_id]);
-$bookmarks = $bmStmt->fetchAll(PDO::FETCH_ASSOC);
+// Fetch Bookmarks
+try {
+    $bmStmt = $conn->prepare("
+        SELECT a.id, a.title, a.image_url
+        FROM bookmarks b
+        JOIN anime a ON b.anime_id = a.id
+        WHERE b.user_id = :uid
+        ORDER BY b.created_at DESC
+    ");
+    $bmStmt->execute(['uid' => $user_id]);
+    $bookmarks = $bmStmt->fetchAll(PDO::FETCH_ASSOC);
+} catch(PDOException $e) {
+    $bookmarks = [];
+    error_log("Error fetching bookmarks: " . $e->getMessage());
+}
 
 ?>
 <!DOCTYPE html>
+<html lang="en-US">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     <link rel="shortcut icon" href="<?=$base_url?>/assets/img/favicon.ico">
     <title><?=$website_name?> | User Profile</title>
     <meta name="robots" content="index, follow" />
-    <meta name="description" content="Watch anime online in English. You can watch free series and movies online and English subtitle.">
-    <meta name="keywords" content="gogoanime,watch anime, anime online, free anime, english anime, sites to watch anime">
+    <meta name="description" content="Manage your user profile and bookmarks.">
+    <meta name="keywords" content="profile, bookmarks, account, <?=$website_name?>">
     <meta itemprop="image" content="<?=$base_url?>/assets/img/logo.png" />
-    <meta property="og:site_name" content="Gogoanime" />
+    <meta property="og:site_name" content="<?=$website_name?>" />
     <meta property="og:locale" content="en_US" />
     <meta property="og:type" content="website" />
     <meta property="og:title" content="<?=$website_name?> | User Profile" />
-    <meta property="og:description" content="Watch anime online in English. You can watch free series and movies online and English subtitle.">
+    <meta property="og:description" content="Manage your user profile and bookmarks.">
     <meta property="og:url" content="" />
     <meta property="og:image" content="<?=$base_url?>/assets/img/logo.png" />
     <meta property="og:image:secure_url" content="<?=$base_url?>/assets/img/logo.png" />
     <meta property="twitter:card" content="summary" />
     <meta property="twitter:title" content="<?=$website_name?> | User Profile" />
-    <meta property="twitter:description" content="Watch anime online in English. You can watch free series and movies online and English subtitle." />
+    <meta property="twitter:description" content="Manage your user profile and bookmarks." />
     <link rel="canonical" href="<?=$base_url?><?php echo $_SERVER['REQUEST_URI'] ?>" />
     <link rel="alternate" hreflang="en-us" href="<?=$base_url?><?php echo $_SERVER['REQUEST_URI'] ?>" />
     <link rel="stylesheet" type="text/css" href="<?=$base_url?>/assets/css/style.css" />
@@ -74,9 +111,7 @@ $bookmarks = $bmStmt->fetchAll(PDO::FETCH_ASSOC);
     <?php require_once('../app/views/partials/advertisements/popup.html'); ?>
     <script type="text/javascript" src="<?=$base_url?>/assets/js/libraries/jquery.js"></script>
     <script>
-        var base_url = 'https://' + document.domain + '/';
-        var base_url_cdn_api = 'https://ajax.gogocdn.net/';
-        var api_anclytic = 'https://ajax.gogocdn.net/anclytic-ajax.html';
+        var base_url = '<?=$base_url?>/';
     </script>
     <script type="text/javascript" src="https://cdn.gogocdn.net/files/gogo/js/main.js?v=6.9"></script>
     <style>
@@ -129,10 +164,10 @@ $bookmarks = $bmStmt->fetchAll(PDO::FETCH_ASSOC);
                             <div class="form-login">
                                 <h1>Welcome, <?php echo htmlspecialchars($user['name']); ?></h1>
                                 <?php if($error): ?>
-                                    <div class="message error"><?php echo $error; ?></div>
+                                    <div class="message error"><?php echo htmlspecialchars($error); ?></div>
                                 <?php endif; ?>
                                 <?php if($success): ?>
-                                    <div class="message success"><?php echo $success; ?></div>
+                                    <div class="message success"><?php echo htmlspecialchars($success); ?></div>
                                 <?php endif; ?>
                                 <div class="profile-info">
                                     <p><strong>Email:</strong> <?php echo htmlspecialchars($user['email']); ?></p>
@@ -145,7 +180,7 @@ $bookmarks = $bmStmt->fetchAll(PDO::FETCH_ASSOC);
                             </div>
                         </div>
 
-                        <!-- [GAP-003] Display Bookmarks -->
+                        <!-- Display Bookmarks -->
                         <div class="main_body">
                             <div class="anime_name favorite">
                                 <i class="icongec-favorite i_pos"></i>
@@ -188,17 +223,7 @@ $bookmarks = $bmStmt->fetchAll(PDO::FETCH_ASSOC);
                 </section>
             </section>
             <div class="clr"></div>
-            <footer>
-                <div class="menu_bottom">
-                    <a href="/about-us.html"><h3>Abouts us</h3></a>
-                    <a href="/contact-us.html"><h3>Contact us</h3></a>
-                    <a href="/privacy.html"><h3>Privacy</h3></a>
-                </div>
-                <div class="croll">
-                    <div class="big"><i class="icongec-backtop"></i></div>
-                    <div class="small"><i class="icongec-backtop_mb"></i></div>
-                </div>
-            </footer>
+            <?php include('../app/views/partials/footer.php')?>
         </div>
     </div>
 </div>
@@ -208,6 +233,5 @@ $bookmarks = $bmStmt->fetchAll(PDO::FETCH_ASSOC);
 <script type="text/javascript" src="<?=$base_url?>/assets/js/files/combo.js"></script>
 <script type="text/javascript" src="<?=$base_url?>/assets/js/files/video.js"></script>
 <script type="text/javascript" src="<?=$base_url?>/assets/js/files/jquery.tinyscrollbar.min.js"></script>
-<?php include('../app/views/partials/footer.php')?>
 </body>
 </html>
