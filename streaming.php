@@ -1,27 +1,8 @@
-<?php
-/**
- * Streaming Page
- *
- * This page handles video playback for a specific episode (`/streaming.php?id=X`).
- * It features:
- * 1. Video Player (HTML5 Video or Iframe based on source).
- * 2. Multi-server support (switching between video providers).
- * 3. Navigation to previous/next episodes.
- * 4. Related episodes list.
- * 5. Disqus comments.
- *
- * It also handles search queries if provided via `keyword` GET parameter, acting as a fallback search results page.
- *
- * @package    GogoAnime Clone
- * @subpackage Root
- * @author     GogoAnime Clone Contributors
- * @license    MIT License
- */
-
+<?php 
 require_once('./app/config/info.php');
 require_once('./app/config/db.php');
 
-// --- SEARCH LOGIC ---
+// --- NEW SEARCH LOGIC (Same as animelist.php) ---
 $searchQuery = isset($_GET['keyword']) ? trim($_GET['keyword']) : '';
 $searchResults = [];
 $hasSearched = false;
@@ -34,15 +15,15 @@ if ($searchQuery !== '') {
     $searchStmt->execute();
     $searchResults = $searchStmt->fetchAll(PDO::FETCH_ASSOC);
 }
-// --- END SEARCH LOGIC ---
+// --- END NEW SEARCH LOGIC ---
 
-// --- STREAMING LOGIC ---
+// --- ORIGINAL EPISODE FETCHING LOGIC (Only runs if not searching) ---
 if (!$hasSearched) {
     $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
-    // Fetch Episode & Anime Info
+    // Fetch current episode + anime info
     $stmt = $conn->prepare("
-        SELECT e.*, a.title as anime_title, a.image_url, a.id as anime_id, a.language
+        SELECT e.*, a.title as anime_title, a.image_url, a.id as anime_id
         FROM episodes e
         JOIN anime a ON e.anime_id = a.id
         WHERE e.id = :id
@@ -58,7 +39,7 @@ if (!$hasSearched) {
     $animeNameWithEP = $episode['anime_title'] . ' Episode ' . $ep_num;
     $anime_id = $episode['anime_id'];
 
-    // Fetch Video Providers
+    // --- Video Providers Logic ---
     $videosStmt = $conn->prepare("
         SELECT ev.*, vp.label, vp.name
         FROM episode_videos ev
@@ -69,7 +50,7 @@ if (!$hasSearched) {
     $videosStmt->execute(['episode_id' => $id]);
     $availableVideos = $videosStmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Fallback if no providers found but legacy URL exists
+    // Fallback to legacy video_url if no providers found
     if (empty($availableVideos) && !empty($episode['video_url'])) {
         $availableVideos[] = [
             'provider_id' => 0,
@@ -79,7 +60,6 @@ if (!$hasSearched) {
         ];
     }
 
-    // Determine Selected Video
     $selectedVideo = $availableVideos[0] ?? null;
     if (isset($_GET['server'])) {
         foreach ($availableVideos as $v) {
@@ -92,7 +72,7 @@ if (!$hasSearched) {
 
     $m3u8_url = $selectedVideo ? $selectedVideo['video_url'] : '';
 
-    // Navigation Logic (Prev/Next)
+    // --- Previous / Next Logic ---
     $current_ep_num = $episode['episode_number'];
 
     // Previous Episode
@@ -117,25 +97,28 @@ if (!$hasSearched) {
     $nextStmt->execute(['anime_id' => $anime_id, 'current_ep' => $current_ep_num]);
     $nextEp = $nextStmt->fetch(PDO::FETCH_ASSOC);
 
-    // Build Data Array for Template
+    // Build anime data array with working prev/next
     $anime = [
         'animeNameWithEP' => htmlspecialchars($animeNameWithEP),
         'ep_num' => htmlspecialchars($ep_num),
+        'anime_info' => 'category-slug',
         'ep_download' => $m3u8_url,
         'prevEpLink' => $prevEp ? 'streaming.php?id=' . $prevEp['id'] : '#',
         'nextEpLink' => $nextEp ? 'streaming.php?id=' . $nextEp['id'] : '#',
         'prevEpText' => $prevEp ? 'Episode ' . $prevEp['episode_number'] : 'First Episode',
         'nextEpText' => $nextEp ? 'Episode ' . $nextEp['episode_number'] : 'Last Episode',
+        'video' => $m3u8_url,
+        'gogoserver' => $m3u8_url
     ];
 
     $fetchDetails = [
         'synopsis' => 'Episode ' . $ep_num . ' of ' . htmlspecialchars($episode['anime_title']),
         'name' => htmlspecialchars($episode['anime_title']),
         'imageUrl' => htmlspecialchars($episode['image_url']),
-        'type' => 'TV' // Placeholder, could fetch from DB
+        'type' => 'TV'
     ];
 }
-// --- END STREAMING LOGIC ---
+// --- END ORIGINAL LOGIC ---
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -144,6 +127,7 @@ if (!$hasSearched) {
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     <link rel="shortcut icon" href="<?=$base_url?>/assets/img/favicon.ico">
 
+    <!-- Updated Title based on search -->
     <title><?php if ($hasSearched) { echo "Search Results for '$searchQuery' - $website_name"; } else { echo "Watch $anime[animeNameWithEP] at $website_name"; } ?></title>
 
     <meta name="robots" content="index, follow" />
@@ -167,7 +151,7 @@ if (!$hasSearched) {
     <link rel="stylesheet" type="text/css" href="<?=$base_url?>/assets/css/style.css" />
     <script type="text/javascript" src="<?=$base_url?>/assets/js/libraries/jquery.js"></script>
     <script>
-        var base_url = '<?=$base_url?>/';
+        var base_url = 'https://' . document.domain . '/';
         var base_url_cdn_api = 'https://ajax.gogocdn.net/';
         var api_anclytic = 'https://ajax.gogocdn.net/anclytic-ajax.html';
     </script>
@@ -185,9 +169,9 @@ if (!$hasSearched) {
                         <?php if ($hasSearched): ?>
                         <!-- Display Search Results -->
                         <div class="main_body">
-                            <div class="anime_name anime_list">
-                                <i class="icongec-anime_list i_pos"></i>
-                                <h2>Search Results for '<?=htmlspecialchars($searchQuery)?>'</h2>
+                            <div class="anime_name anime_list"> <!-- Reusing anime_list class for consistency -->
+                                <i class="icongec-anime_list i_pos"></i> <!-- Reusing icon for consistency -->
+                                <h2>Search Results for '<?=$searchQuery?>'</h2>
                             </div>
                             <div class="anime_list_body">
                                 <ul class="listing">
@@ -197,23 +181,25 @@ if (!$hasSearched) {
                                         </li>
                                     <?php endforeach; ?>
                                     <?php if (empty($searchResults)): ?>
-                                        <li><p>No anime found matching '<?=htmlspecialchars($searchQuery)?>'.</p></li>
+                                        <li><p>No anime found matching '<?=$searchQuery?>'.</p></li>
                                     <?php endif; ?>
                                 </ul>
                                 <div class="clr"></div>
                             </div>
                         </div>
                         <?php else: ?>
-                        <!-- Display Streaming Content -->
+                        <!-- Display Original Streaming Content -->
                         <div class="main_body">
                             <div class="anime_name anime_video">
                                 <i class="icongec-anime_video i_pos"></i>
                                 <div class="title_name">
                                     <h2><?=$anime['animeNameWithEP']?></h2>
                                 </div>
-                                <div class="link_face">
-                                    <a class="btn facebook hidden-phone" href="javascript:;" onclick="window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent('<?=$base_url?><?php echo $_SERVER['REQUEST_URI'] ?>') + '', 'facebook-share-dialog', 'width=626,height=436');return false;"></a>
-                                    <a class="btn twitter hidden-phone" href="https://twitter.com/share" target="_blank" data-url="<?=$base_url?><?php echo $_SERVER['REQUEST_URI'] ?>"></a>
+                                <div class="link_face"><a class="btn facebook hidden-phone" href="javascript:;"
+                                        onclick="window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent('<?=$base_url?><?php echo $_SERVER['REQUEST_URI'] ?>') + '', 'facebook-share-dialog', 'width=626,height=436');return false;">
+                                    </a>
+                                    <a class="btn twitter hidden-phone" href="https://twitter.com/share" target="_blank"
+                                        data-url="<?=$base_url?><?php echo $_SERVER['REQUEST_URI'] ?>"></a>
                                 </div>
                             </div>
                             <div class="anime_video_body">
@@ -227,7 +213,8 @@ if (!$hasSearched) {
                                     </div>
                                     &nbsp;
                                     <div class="anime_video_note_watch">
-                                        Please, <a onclick="window.location.reload()" href="javascript:void(0)">reload page</a> if you can't watch the video
+                                        Please, <a onclick="freload()" href="javascript:void(0)">reload page</a> if you
+                                        can't watch the video
                                     </div>
 
                                     <!-- Server Selection -->
@@ -253,17 +240,26 @@ if (!$hasSearched) {
                                         <?php endif; ?>
                                     </div>
 
+                                    <div style="max-height:300px;overflow:hidden;">
+                                    </div>
                                     <div class="download-anime">
-                                        <div class="favorites_book">
-                                            <ul>
-                                                <li class="dowloads"><a href="<?=$anime['ep_download']?>" target="_blank"><i class="icongec-dowload"></i><span>Download</span></a></li>
-                                            </ul>
+                                        <div class="anime_video_note_watch">
+                                            <div class="anime_video_body_report" style="top:7px;">
+                                                <!---<a class="report-ajax" href="javascript:void(0)">Report this
+                                                    Episode!</a> --->
+                                            </div>
                                         </div>
+                                    </div>
+                                    <div class="favorites_book">
+                                        <ul>
+                                            <li class="dowloads"><a href="<?=$anime['ep_download']?>" target="_blank"><i
+                                                        class="icongec-dowload"></i><span>Download</span></a></li>
+                                            <!---<li class="favorites"><i class="icongec-fa-heart"></i><span>Add to
+                                                    Favorites</span></li>-->
+                                        </ul>
                                     </div>
                                 </div>
                                 <div class="clr"></div>
-
-                                <!-- Video Player -->
                                 <div class="anime_video_body_watch">
                                     <div id="load_anime">
                                         <div class="anime_video_body_watch_items load">
@@ -273,6 +269,10 @@ if (!$hasSearched) {
                                                     $url = $selectedVideo['video_url'];
                                                     $ext = strtolower(pathinfo($url, PATHINFO_EXTENSION));
                                                     $is_direct = in_array($ext, ['mp4','mkv','webm','m3u8']) || (strpos($url, '/assets/uploads/') !== false);
+
+                                                    // Simple heuristic: if it contains an extension for video, it's direct.
+                                                    // Otherwise, if it's a URL, treat as iframe.
+                                                    // Also check for "Local" provider if we have that info, but checking URL is often enough.
 
                                                     if ($is_direct) {
                                                         echo "<video controls style='position:absolute; top:0; left:0; width:100%; height:100%; background:black'>";
@@ -290,7 +290,6 @@ if (!$hasSearched) {
                                         </div>
                                     </div>
                                 </div>
-
                                 <div class="anime_video_body_episodes">
                                     <div class="anime_video_body_episodes_l">
                                         <a href='<?=$anime['prevEpLink']?>'><?=$anime['prevEpText']?></a>
@@ -300,8 +299,7 @@ if (!$hasSearched) {
                                     </div>
                                 </div>
                                 <div class="clr"></div>
-
-                                <!-- Related Episodes -->
+                                <!-- Related Episodes Sidebar (Small Blocks) -->
                                 <div class="anime_video_body">
                                     <div class="anime_name episode_video">
                                         <i class="icongec-episode_video i_pos"></i>
@@ -309,7 +307,6 @@ if (!$hasSearched) {
                                     </div>
                                     <ul id="episode_related">
                                         <?php
-                                        // Fetch all episodes for sidebar navigation
                                         $relatedStmt = $conn->prepare("SELECT id, episode_number FROM episodes WHERE anime_id = :anime_id ORDER BY episode_number ASC");
                                         $relatedStmt->execute(['anime_id' => $episode['anime_id']]);
                                         while($relEp = $relatedStmt->fetch(PDO::FETCH_ASSOC)) {
@@ -329,8 +326,7 @@ if (!$hasSearched) {
                                 <div class="clr"></div>
                                 <div class="clr"></div>
                                 <div class="clr"></div>
-
-                                <!-- Comments -->
+                                <!-- Updated Comments Section -->
                                 <div class="anime_video_body_comment">
                                     <div class="anime_video_body_comment_name">
                                         <div class="btm-center">
@@ -348,6 +344,7 @@ if (!$hasSearched) {
                         </div>
                         <?php endif; ?>
                         <div class="clr"></div>
+                        <!-- DUPLICATE REMOVED HERE -->
                     </section>
                     <section class="content_right">
                         <div class="headnav_center"></div>
@@ -377,16 +374,80 @@ if (!$hasSearched) {
                             </div>
                         </div>
                         <div class="clr"></div>
+                        <div id="load_ads_2">
+                            <div id="media.net sticky ad" style="display: inline-block">
+                            </div>
+                        </div>
                         <style type="text/css">
+                            #load_ads_2 {
+                                width: 300px;
+                            }
+                            #load_ads_2.sticky {
+                                position: fixed;
+                                top: 0;
+                            }
                             #scrollbar2 .viewport {
                                 height: 1000px !important;
                             }
                         </style>
+                        <script>
+                            var leftamt;
+                            function scrollFunction() {
+                                var scamt = (document.documentElement.scrollTop ? document.documentElement.scrollTop :
+                                    document.body.scrollTop);
+                                var element = document.getElementById("media.net sticky ad");
+                                if (scamt > leftamt) {
+                                    var leftPosition = element.getBoundingClientRect().left;
+                                    element.className = element.className.replace(/(?:^|\s)fixclass(?!\S)/g, '');
+                                    element.className += " fixclass";
+                                    element.style.left = leftPosition + 'px';
+                                } else {
+                                    element.className = element.className.replace(/(?:^|\s)fixclass(?!\S)/g, '');
+                                }
+                            }
+                            function getElementTopLeft(id) {
+                                var ele = document.getElementById(id);
+                                var top = 0;
+                                var left = 0;
+                                while (ele.tagName != "BODY") {
+                                    top += ele.offsetTop;
+                                    left += ele.offsetLeft;
+                                    ele = ele.offsetParent;
+                                }
+                                return {
+                                    top: top,
+                                    left: left
+                                };
+                            }
+                            function abcd() {
+                                TopLeft = getElementTopLeft("media.net sticky ad");
+                                leftamt = TopLeft.top;
+                                //leftamt -= 10;
+                            }
+                            window.onload = abcd;
+                            window.onscroll = scrollFunction;
+                        </script>
                         <?php require_once('./app/views/partials/sub-category.html'); ?>
                     </section>
                 </section>
                 <div class="clr"></div>
-                <?php include('./app/views/partials/footer.php'); ?>
+                <footer>
+                    <div class="menu_bottom">
+                        <a href="/about-us.html">
+                            <h3>Abouts us</h3>
+                        </a>
+                        <a href="/contact-us.html">
+                            <h3>Contact us</h3>
+                        </a>
+                        <a href="/privacy.html">
+                            <h3>Privacy</h3>
+                        </a>
+                    </div>
+                    <div class="croll">
+                        <div class="big"><i class="icongec-backtop"></i></div>
+                        <div class="small"><i class="icongec-backtop_mb"></i></div>
+                    </div>
+                </footer>
             </div>
         </div>
     </div>
@@ -395,6 +456,7 @@ if (!$hasSearched) {
     <div class="mask"></div>
     <script type="text/javascript" src="<?=$base_url?>/assets/js/files/combo.js"></script>
     <script type="text/javascript" src="<?=$base_url?>/assets/js/files/jquery.tinyscrollbar.min.js"></script>
+    <?php include('./app/views/partials/footer.php'); ?>
     
     <?php if (!$hasSearched): ?>
     <script>
@@ -408,6 +470,7 @@ if (!$hasSearched) {
             showButton.style.display = 'none';
             hideButton.style.display = 'block';
             
+            // Load Disqus only once when first shown
             if (!window.disqusLoaded) {
               var disqus_config = function () {
                 this.page.url = '<?=$base_url?><?php echo $_SERVER['REQUEST_URI'] ?>';
@@ -436,5 +499,7 @@ if (!$hasSearched) {
             $('#scrollbar2').tinyscrollbar();
         }
     </script>
+    <!-- Don't forget to update YOUR-DISQUS-SHORTNAME -->
+    <script id="dsq-count-scr" src="//YOUR-DISQUS-SHORTNAME.disqus.com/count.js" async></script>
 </body>
 </html>

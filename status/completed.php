@@ -1,23 +1,12 @@
-<?php
-/**
- * Completed Anime Page
- *
- * This page displays a paginated list of anime with the status 'Completed'.
- *
- * @package    GogoAnime Clone
- * @subpackage Status
- * @author     GogoAnime Clone Contributors
- * @license    MIT License
- */
-
+<?php 
 require_once('../app/config/info.php');
-require_once('../app/config/db.php');
-
+require_once('../app/config/db.php'); // Include DB connection
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 if ($page < 1) $page = 1;
 $limit = 20;
 $offset = ($page - 1) * $limit;
 
+// [GAP-001] Native MySQL Implementation for Completed Status
 // Count total completed anime
 $countStmt = $conn->query("SELECT COUNT(*) FROM anime WHERE status = 'Completed'");
 $totalAnime = $countStmt->fetchColumn();
@@ -32,9 +21,11 @@ $completedList = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
 <html lang="en-US">
+
 <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
         <link rel="shortcut icon" href="<?=$base_url?>/assets/img/favicon.ico">
 
         <title>List completed Anime at <?=$website_name?></title>
@@ -65,7 +56,7 @@ $completedList = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         <script type="text/javascript" src="<?=$base_url?>/assets/js/libraries/jquery.js"></script>
         <script>
-                var base_url = '<?=$base_url?>/';
+                var base_url = 'https://' + document.domain + '/';
                 var base_url_cdn_api = 'https://ajax.gogocdn.net/';
                 var api_anclytic = 'https://ajax.gogocdn.net/anclytic-ajax.html';
         </script>
@@ -102,7 +93,7 @@ $completedList = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                         <div class="last_episodes">
                                                                 <ul class="items">
                                                                 <?php foreach($completedList as $completedA)  {
-                                                                    $link = "/anime-details.php?id=" . $completedA['id'];
+                                                                    $link = "/anime-details.php?id=" . $completedA['id']; // Fixed route
                                                                     $title = htmlspecialchars($completedA['title']);
                                                                     $img = htmlspecialchars($completedA['image_url']);
                                                                     $status = htmlspecialchars($completedA['status']);
@@ -136,7 +127,8 @@ $completedList = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                                                 <div class="scrollbar">
                                                                                         <div class="track">
                                                                                                 <div class="thumb">
-                                                                                                        <div class="end">
+                                                                                                        <div
+                                                                                                                class="end">
                                                                                                         </div>
                                                                                                 </div>
                                                                                         </div>
@@ -208,7 +200,23 @@ $completedList = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                         </section>
                                 </section>
                                 <div class="clr"></div>
-                                <?php include('../app/views/partials/footer.php')?>
+                                <footer>
+                                        <div class="menu_bottom">
+                                                <a href="/about-us.html">
+                                                        <h3>Abouts us</h3>
+                                                </a>
+                                                <a href="/contact-us.html">
+                                                        <h3>Contact us</h3>
+                                                </a>
+                                                <a href="/privacy.html">
+                                                        <h3>Privacy</h3>
+                                                </a>
+                                        </div>
+                                        <div class="croll">
+                                                <div class="big"><i class="icongec-backtop"></i></div>
+                                                <div class="small"><i class="icongec-backtop_mb"></i></div>
+                                        </div>
+                                </footer>
                         </div>
                 </div>
         </div>
@@ -218,10 +226,12 @@ $completedList = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <script type="text/javascript" src="<?=$base_url?>/assets/js/files/combo.js"></script>
             <script type="text/javascript" src="<?=$base_url?>/assets/js/files/video.js"></script>
         <script type="text/javascript" src="<?=$base_url?>/assets/js/files/jquery.tinyscrollbar.min.js"></script>
+        <?php include('../app/views/partials/footer.php')?>
         <script>
                 if (document.getElementById('scrollbar2')) {
                         $('#scrollbar2').tinyscrollbar();
                 }
         </script>
 </body>
+
 </html>

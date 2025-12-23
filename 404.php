@@ -90,7 +90,17 @@
                  </section>                                                                              
             </section>                
             <div class="clr"></div>
-             <?php include('./app/views/partials/footer.php'); ?>
+<footer>
+  <div class="menu_bottom">
+    <a href="/about-us.html"><h3>Abouts us</h3></a>
+    <a href="/contact-us.html"><h3>Contact us</h3></a>
+    <a href="/privacy.html"><h3>Privacy</h3></a>
+  </div>
+  <div class="croll">
+    <div class="big"><i class="icongec-backtop"></i></div>
+    <div class="small"><i class="icongec-backtop_mb"></i></div>
+  </div>
+</footer>
         </div>
     </div>
 </div>
@@ -100,6 +110,7 @@
     <script type="text/javascript" src="<?=$base_url?>/assets/js/files/combo.js"></script>
     <script type="text/javascript" src="<?=$base_url?>/assets/js/files/video.js"></script>
 <script type="text/javascript" src="<?=$base_url?>/assets/js/files/jquery.tinyscrollbar.min.js"></script>
+<?php include('./app/views/partials/footer.php'); ?>
 <script>
 if(document.getElementById('scrollbar2')){
     $('#scrollbar2').tinyscrollbar();

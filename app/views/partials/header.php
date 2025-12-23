@@ -1,23 +1,14 @@
 <?php
-/**
- * Header Partial
- *
- * This file contains the HTML header section including the navigation bar,
- * user authentication status, and main menu links. It is included at the
- * beginning of most public-facing pages.
- *
- * @package    GogoAnime Clone
- * @subpackage Views/Partials
- * @author     GogoAnime Clone Contributors
- * @license    MIT License
- */
-
 declare(strict_types=1);
 
 // Start session only if not already started
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
+
+// Optional: Enable error reporting during development (remove in production)
+// error_reporting(E_ALL);
+// ini_set('display_errors', 1);
 ?>
 
 <header>

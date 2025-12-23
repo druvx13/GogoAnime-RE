@@ -1,48 +1,12 @@
-<?php
+<?php 
 require_once('./app/config/info.php');
-require_once('./app/config/db.php');
-
-// --- NEW SEARCH LOGIC ---
-$searchQuery = isset($_GET['keyword']) ? trim($_GET['keyword']) : '';
-$searchResults = [];
-$hasSearched = false;
-
-if ($searchQuery !== '') {
-    $hasSearched = true;
-    $searchTerm = '%' . $searchQuery . '%';
-    $searchStmt = $conn->prepare("SELECT id, title FROM anime WHERE title LIKE :title ORDER BY title ASC");
-    $searchStmt->bindValue(':title', $searchTerm, PDO::PARAM_STR);
-    $searchStmt->execute();
-    $searchResults = $searchStmt->fetchAll(PDO::FETCH_ASSOC);
-}
-// --- END NEW SEARCH LOGIC ---
-
-// --- ORIGINAL PAGINATION LOGIC (ADAPTED FOR SEARCH) ---
-$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-$char = isset($_GET['char']) ? $_GET['char'] : 'All';
-
-// Only run original pagination logic if not searching
-if (!$hasSearched) {
-    $limit = 50;
-    $offset = ($page - 1) * $limit;
-
-    $whereClause = "1=1";
-    $params = [];
-    if ($char != 'All') {
-        $whereClause = "title LIKE :char";
-        $params[':char'] = $char . '%';
-    }
-
-    $stmt = $conn->prepare("SELECT * FROM anime WHERE $whereClause ORDER BY title ASC LIMIT :limit OFFSET :offset");
-    foreach ($params as $k => $v) {
-        $stmt->bindValue($k, $v);
-    }
-    $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
-    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
-    $stmt->execute();
-    $animeList = $stmt->fetchAll(PDO::FETCH_ASSOC);
-}
-// --- END ORIGINAL LOGIC ---
+$parts=parse_url($_SERVER['REQUEST_URI']); 
+$page_url=explode('/', $parts['path']);
+$url = $page_url[count($page_url)-1];
+//$url = "anime-list-R";
+$aph = substr($url, -1);
+$alphabet = substr($url, -1);
+$page = isset($_GET['page']) ? $_GET['page'] : 1;
 ?>
 <!DOCTYPE html>
 <html>
@@ -51,22 +15,25 @@ if (!$hasSearched) {
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     <link rel="shortcut icon" href="<?=$base_url?>/assets/img/favicon.ico">
 
-    <!-- Updated Title based on search -->
-    <title><?php if ($hasSearched) { echo "Search Results for '$searchQuery'"; } else { echo "Anime List - $website_name"; } ?></title>
+    <title>List All Anime at Gogoanime | Anime List</title>
 
     <meta name="robots" content="index, follow" />
-    <meta name="description" content="<?php if ($hasSearched) { echo "Search results for '$searchQuery' at $website_name"; } else { echo "List All Anime at $website_name | Anime List"; } ?>">
-    <meta name="keywords" content="<?php if ($hasSearched) { echo "Search, $searchQuery, $website_name, Anime"; } else { echo "List All Anime, $website_name, Anime List"; } ?>">
+    <meta name="description" content="List All Anime  at Gogoanime | Anime List">
+    <meta name="keywords" content="List All Anime  at Gogoanime | Anime List">
     <meta itemprop="image" content="<?=$base_url?>/assets/img/logo.png" />
 
-    <meta property="og:site_name" content="<?=$website_name?>" />
+    <meta property="og:site_name" content="Gogoanime" />
     <meta property="og:locale" content="en_US" />
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="<?php if ($hasSearched) { echo "Search Results for '$searchQuery'"; } else { echo "Anime List - $website_name"; } ?>" />
-    <meta property="og:description" content="<?php if ($hasSearched) { echo "Search results for '$searchQuery' at $website_name"; } else { echo "List All Anime at $website_name | Anime List"; } ?>">
-    <meta property="og:url" content="<?=$base_url?><?php echo $_SERVER['REQUEST_URI'] ?>" />
+    <meta property="og:title" content="List All Anime at Gogoanime | Anime List" />
+    <meta property="og:description" content="List All Anime  at Gogoanime | Anime List">
+    <meta property="og:url" content="" />
     <meta property="og:image" content="<?=$base_url?>/assets/img/logo.png" />
     <meta property="og:image:secure_url" content="<?=$base_url?>/assets/img/logo.png" />
+
+    <meta property="twitter:card" content="summary" />
+    <meta property="twitter:title" content="List All Anime at Gogoanime | Anime List" />
+    <meta property="twitter:description" content="List All Anime  at Gogoanime | Anime List" />
 
     <link rel="canonical" href="<?=$base_url?><?php echo $_SERVER['REQUEST_URI'] ?>" />
     <link rel="alternate" hreflang="en-us" href="<?=$base_url?><?php echo $_SERVER['REQUEST_URI'] ?>" />
@@ -74,11 +41,11 @@ if (!$hasSearched) {
     <script type="text/javascript" src="<?=$base_url?>/assets/js/libraries/jquery.js"></script>
     <?php require_once('./app/views/partials/advertisements/popup.html'); ?>
     <script>
-        var base_url = 'https://' . document.domain . '/';
+        var base_url = 'https://' + document.domain + '/';
         var base_url_cdn_api = 'https://ajax.gogocdn.net/';
         var api_anclytic = 'https://ajax.gogocdn.net/anclytic-ajax.html';
     </script>
-    <script type="text/javascript" src="https://cdn.gogocdn.net/files/gogo/js/main.js  "></script>
+    <script type="text/javascript" src="https://cdn.gogocdn.net/files/gogo/js/main.js?v=7.1"></script>
 </head>
 
 <body>
@@ -91,77 +58,110 @@ if (!$hasSearched) {
                     <section class="content_left">
 
                         <div class="main_body">
-                            <!-- Updated Header based on search -->
                             <div class="anime_name anime_list">
                                 <i class="icongec-anime_list i_pos"></i>
-                                <h2><?php if ($hasSearched) { echo "Search Results for '$searchQuery'"; } else { echo "ANIME LIST"; } ?></h2>
-                                <!-- Pagination container only shows if not searching -->
-                                <?php if (!$hasSearched): ?>
+                                <h2>ANIME LIST</h2>
                                 <div class="anime_name_pagination">
                                     <div class="pagination">
-                                        <ul class='pagination-list'>
-                                            <?php
-                                            $countStmt = $conn->prepare("SELECT COUNT(*) FROM anime WHERE $whereClause");
-                                            foreach ($params as $k => $v) {
-                                                $countStmt->bindValue($k, $v);
-                                            }
-                                            $countStmt->execute();
-                                            $total = $countStmt->fetchColumn();
-
-                                            $totalPages = ceil($total / $limit);
-
-                                            for ($i = 1; $i <= $totalPages; $i++) {
-                                                 if ($i > 10 && $i != $totalPages && $i != $page) continue;
-                                                 $active = ($i == $page) ? 'selected' : '';
-                                                 echo "<li class='$active'><a href='?char=$char&page=$i'>$i</a></li>";
-                                            }
-                                            ?>
-                                        </ul>
+                                    <ul class='pagination-list'><?php $pagination = file_get_contents("$apiLink/anime-AZ-page?aph=$aph&page=$page");$pagination = json_decode($pagination, true); echo str_replace("active","selected",$pagination['pagination']) ?>
                                     </div>
                                 </div>
-                                <?php endif; ?>
                             </div>
-                            
-                            <!-- Alphabet filter only shows if not searching -->
-                            <?php if (!$hasSearched): ?>
                             <div class="list_search">
                                 <ul>
                                     <li class="first-char">
-                                        <a href="?char=All" class="<?= (!isset($_GET['char']) || $_GET['char'] == 'All') ? 'active' : '' ?>" rel="all">All</a>
+                                        <a href="/anime-list" rel="" class="">All</a>
                                     </li>
-                                    <?php foreach (range('A', 'Z') as $char) { ?>
-                                        <li class="first-char">
-                                            <a href="?char=<?=$char?>" class="<?= (isset($_GET['char']) && $_GET['char'] == $char) ? 'active' : '' ?>" rel=""><?=$char?></a>
-                                        </li>
-                                    <?php } ?>
+                                    <li class="first-char">
+                                        <a href="/anime-list-A" rel="" class="<?php if ($aph === "A"){echo "active";} else {echo "noactive";}?>">A</a>
+                                    </li>
+                                    <li class="first-char">
+                                        <a href="/anime-list-B" rel="" class="<?php if ($aph == "B"){echo "active";} else {echo "noactive";}?>">B</a>
+                                    </li>
+                                    <li class="first-char">
+                                        <a href="/anime-list-C" rel="" class="<?php if ($aph == "C"){echo "active";} else {echo "noactive";}?>">C</a>
+                                    </li>
+                                    <li class="first-char">
+                                        <a href="/anime-list-D" rel="" class="<?php if ($aph == "D"){echo "active";} else {echo "noactive";}?>">D</a>
+                                    </li>
+                                    <li class="first-char">
+                                        <a href="/anime-list-E" rel="" class="<?php if ($aph == "E"){echo "active";} else {echo "noactive";}?>">E</a>
+                                    </li>
+                                    <li class="first-char">
+                                        <a href="/anime-list-F" rel="" class="<?php if ($aph == "F"){echo "active";} else {echo "noactive";}?>">F</a>
+                                    </li>
+                                    <li class="first-char">
+                                        <a href="/anime-list-G" rel="" class="<?php if ($aph == "G"){echo "active";} else {echo "noactive";}?>">G</a>
+                                    </li>
+                                    <li class="first-char">
+                                        <a href="/anime-list-H" rel="" class="<?php if ($aph == "H"){echo "active";} else {echo "noactive";}?>">H</a>
+                                    </li>
+                                    <li class="first-char">
+                                        <a href="/anime-list-I" rel="" class="<?php if ($aph == "I"){echo "active";} else {echo "noactive";}?>">I</a>
+                                    </li>
+                                    <li class="first-char">
+                                        <a href="/anime-list-J" rel="" class="<?php if ($aph == "J"){echo "active";} else {echo "noactive";}?>">J</a>
+                                    </li>
+                                    <li class="first-char">
+                                        <a href="/anime-list-K" rel="" class="<?php if ($aph == "K"){echo "active";} else {echo "noactive";}?>">K</a>
+                                    </li>
+                                    <li class="first-char">
+                                        <a href="/anime-list-L" rel="" class="<?php if ($aph == "L"){echo "active";} else {echo "noactive";}?>">L</a>
+                                    </li>
+                                    <li class="first-char">
+                                        <a href="/anime-list-M" rel="" class="<?php if ($aph == "M"){echo "active";} else {echo "noactive";}?>">M</a>
+                                    </li>
+                                    <li class="first-char">
+                                        <a href="/anime-list-N" rel="" class="<?php if ($aph == "N"){echo "active";} else {echo "noactive";}?>">N</a>
+                                    </li>
+                                    <li class="first-char">
+                                        <a href="/anime-list-O" rel="" class="<?php if ($aph == "O"){echo "active";} else {echo "noactive";}?>">O</a>
+                                    </li>
+                                    <li class="first-char">
+                                        <a href="/anime-list-P" rel="" class="<?php if ($aph == "P"){echo "active";} else {echo "noactive";}?>">P</a>
+                                    </li>
+                                    <li class="first-char">
+                                        <a href="/anime-list-Q" rel="" class="<?php if ($aph == "Q"){echo "active";} else {echo "noactive";}?>">Q</a>
+                                    </li>
+                                    <li class="first-char">
+                                        <a href="/anime-list-R" rel="" class="<?php if ($aph == "R"){echo "active";} else {echo "noactive";}?>">R</a>
+                                    </li>
+                                    <li class="first-char">
+                                        <a href="/anime-list-S" rel="" class="<?php if ($aph == "S"){echo "active";} else {echo "noactive";}?>">S</a>
+                                    </li>
+                                    <li class="first-char">
+                                        <a href="/anime-list-T" rel="" class="<?php if ($aph == "T"){echo "active";} else {echo "noactive";}?>">T</a>
+                                    </li>
+                                    <li class="first-char">
+                                        <a href="/anime-list-U" rel="" class="<?php if ($aph == "U"){echo "active";} else {echo "noactive";}?>">U</a>
+                                    </li>
+                                    <li class="first-char">
+                                        <a href="/anime-list-V" rel="" class="<?php if ($aph == "V"){echo "active";} else {echo "noactive";}?>">V</a>
+                                    </li>
+                                    <li class="first-char">
+                                        <a href="/anime-list-W" rel="" class="<?php if ($aph == "W"){echo "active";} else {echo "noactive";}?>">W</a>
+                                    </li>
+                                    <li class="first-char">
+                                        <a href="/anime-list-X" rel="" class="<?php if ($aph == "X"){echo "active";} else {echo "noactive";}?>">X</a>
+                                    </li>
+                                    <li class="first-char">
+                                        <a href="/anime-list-Y" rel="" class="<?php if ($aph == "Y"){echo "active";} else {echo "noactive";}?>">Y</a>
+                                    </li>
+                                    <li class="first-char">
+                                        <a href="/anime-list-Z" rel="" class="<?php if ($aph == "Z"){echo "active";} else {echo "noactive";}?>">Z</a>
+                                    </li>
                                 </ul>
                             </div>
-                            <?php endif; ?>
-                            
                             <div class="anime_list_body">
                                 <ul class="listing">
-                                    <?php
-                                    // Display search results if searched, otherwise display paginated list
-                                    if ($hasSearched) {
-                                        // Display search results
-                                        foreach($searchResults as $anime) {
-                                            $link = "/anime-details.php?id=" . $anime['id'];
-                                            $title = htmlspecialchars($anime['title']);
-                                            echo "<li title='$title'><a href='$link'>$title</a></li>";
-                                        }
-                                        // Show message if no results found
-                                        if (empty($searchResults)) {
-                                            echo "<p>No anime found matching '$searchQuery'.</p>";
-                                        }
-                                    } else {
-                                        // Display original paginated list
-                                        foreach($animeList as $anime) {
-                                            $link = "/anime-details.php?id=" . $anime['id'];
-                                            $title = htmlspecialchars($anime['title']);
-                                            echo "<li title='$title'><a href='$link'>$title</a></li>";
-                                        }
-                                    }
-                                    ?>
+                                <?php
+                                  $json = file_get_contents("$apiLink/animeListAZ?aph=$alphabet&page=$page");
+                                  $json = json_decode($json, true);
+                                  foreach($json as $animeList)  { 
+                                ?>
+                                    
+                                    <li title='<?php $desc = $animeList['liTitle']; echo htmlspecialchars($desc);?>'> <a href="/category/<?=$animeList['animeId']?>" title=""><?=$animeList['animeTitle']?></a></li>
+                                <?php } ?>
                                 </ul>
                                 <div class="clr"></div>
                             </div>
@@ -170,7 +170,6 @@ if (!$hasSearched) {
                     </section>
                     <section class="content_right">
                     <div class="headnav_center"></div>
-
                         <div class="clr"></div>
                         <div class="main_body">
                             <div class="main_body_black">
@@ -281,7 +280,7 @@ if (!$hasSearched) {
         <script type="text/javascript" src="<?=$base_url?>/assets/js/files/combo.js"></script>
     <script type="text/javascript" src="<?=$base_url?>/assets/js/files/video.js"></script>
     <script type="text/javascript" src="<?=$base_url?>/assets/js/files/jquery.tinyscrollbar.min.js"></script>
-    <?php include('./app/views/partials/footer.php')?> 
+    <?php include('./app/views/partials/footer.php')?>
 
     <script type="text/javascript" src="<?=$base_url?>/assets/js/files/jqueryTooltip.js"></script>
     <script type="text/javascript">

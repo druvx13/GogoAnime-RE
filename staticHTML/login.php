@@ -1,21 +1,11 @@
-<?php
-/**
- * Login Page
- *
- * This file handles user authentication. It accepts email and password credentials,
- * verifies them against the database, and establishes a user session.
- * It also supports "Remember Me" functionality via cookies.
- *
- * @package    GogoAnime Clone
- * @subpackage StaticHTML
- * @author     GogoAnime Clone Contributors
- * @license    MIT License
- */
+<?php 
+// For debugging
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 
-// Start the session at the very beginning if not already started
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+// Start the session at the very beginning
+session_start();
 
 require_once('../app/config/info.php');
 require_once('../app/config/db.php');
@@ -32,7 +22,6 @@ ob_start();
 $error = '';
 $success = '';
 
-// Handle Login Submission
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['email']) && isset($_POST['password'])) {
     $email = filter_var($_POST['email'], FILTER_SANITIZE_EMAIL);
     $password = $_POST['password'];
@@ -44,16 +33,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['email']) && isset($_PO
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($user && password_verify($password, $user['password'])) {
-            // Set session variables
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['user_name'] = $user['name'];
             
-            // Handle Remember Me
             if ($remember) {
                 $token = bin2hex(random_bytes(16));
                 $stmt = $conn->prepare("UPDATE users SET remember_token = :token WHERE id = :id");
                 $stmt->execute(['token' => $token, 'id' => $user['id']]);
-                // Cookie expires in 30 days
                 setcookie('remember_me', $token, time() + (86400 * 30), "/");
             }
             
@@ -65,35 +51,32 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['email']) && isset($_PO
             $error = "Invalid email or password";
         }
     } catch(PDOException $e) {
-        $error = "An error occurred during login. Please try again.";
-        // Log detailed error for admin
-        error_log("Login error: " . $e->getMessage());
+        $error = "An error occurred: " . $e->getMessage();
     }
 }
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     <link rel="shortcut icon" href="<?=$base_url?>/assets/img/favicon.ico">
     <title><?=$website_name?> | Login</title>
     <meta name="robots" content="index, follow" />
-    <meta name="description" content="Login to your account.">
-    <meta name="keywords" content="login, sign in, <?=$website_name?>">
+    <meta name="description" content="Watch anime online in English. You can watch free series and movies online and English subtitle.">
+    <meta name="keywords" content="gogoanime,watch anime, anime online, free anime, english anime, sites to watch anime">
     <meta itemprop="image" content="<?=$base_url?>/assets/img/logo.png" />
-    <meta property="og:site_name" content="<?=$website_name?>" />
+    <meta property="og:site_name" content="Gogoanime" />
     <meta property="og:locale" content="en_US" />
     <meta property="og:type" content="website" />
     <meta property="og:title" content="<?=$website_name?> | Login" />
-    <meta property="og:description" content="Login to your account.">
+    <meta property="og:description" content="Watch anime online in English. You can watch free series and movies online and English subtitle.">
     <meta property="og:url" content="" />
     <meta property="og:image" content="<?=$base_url?>/assets/img/logo.png" />
     <meta property="og:image:secure_url" content="<?=$base_url?>/assets/img/logo.png" />
     <meta property="twitter:card" content="summary" />
     <meta property="twitter:title" content="<?=$website_name?> | Login" />
-    <meta property="twitter:description" content="Login to your account." />
+    <meta property="twitter:description" content="Watch anime online in English. You can watch free series and movies online and English subtitle." />
     <link rel="canonical" href="<?=$base_url?><?php echo $_SERVER['REQUEST_URI'] ?>" />
     <link rel="alternate" hreflang="en-us" href="<?=$base_url?><?php echo $_SERVER['REQUEST_URI'] ?>" />
     <link rel="stylesheet" type="text/css" href="<?=$base_url?>/assets/css/style.css" />
@@ -102,7 +85,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['email']) && isset($_PO
     <?php require_once('../app/views/partials/advertisements/popup.html'); ?>
     <script type="text/javascript" src="<?=$base_url?>/assets/js/libraries/jquery.js"></script>
     <script>
-        var base_url = '<?=$base_url?>/';
+        var base_url = 'https://' + document.domain + '/';
+        var base_url_cdn_api = 'https://ajax.gogocdn.net/';
+        var api_anclytic = 'https://ajax.gogocdn.net/anclytic-ajax.html';
     </script>
     <style>
         .message { text-align: center; padding: 10px; margin-bottom: 15px; }
@@ -127,21 +112,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['email']) && isset($_PO
                             <div class="form-login">
                                 <h1>Log in to Gogoanime</h1>
                                 <?php if($error): ?>
-                                    <div class="message error"><?php echo htmlspecialchars($error); ?></div>
+                                    <div class="message error"><?php echo $error; ?></div>
                                 <?php endif; ?>
                                 <?php if($success): ?>
-                                    <div class="message success"><?php echo htmlspecialchars($success); ?></div>
+                                    <div class="message success"><?php echo $success; ?></div>
                                 <?php endif; ?>
-                                <a href="javascript:void(0)" class="btn-google" style="opacity: 0.5; cursor: not-allowed;">
+                                <a href="<?=$base_url?>" class="btn-google">
                                     <span><img src="https://gogoanime3.co/img/google.png" alt="google" /></span>
-                                    Log in with Google (Disabled)
+                                    Log in with Google
                                 </a>
                                 <form method="post" action="<?=$base_url?>/login.html">
                                     <input type="email" name="email" placeholder="Email" required="required" value="">
                                     <input type="password" name="password" placeholder="Password" required="required">
-                                    <div style="margin-top: 10px; color: #ccc;">
-                                        <input type="checkbox" name="remember" value="1" style="width: auto;"> Remember me
-                                    </div>
+                                    <div><input type="checkbox" name="remember" value="1"> Remember me</div>
                                     <button type="submit">Sign in</button>
                                 </form>
                                 <a class="link-forget" href="/forget.html">Forgot password?</a>
@@ -167,7 +150,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['email']) && isset($_PO
                 </section>
             </section>
             <div class="clr"></div>
-            <?php include('../app/views/partials/footer.php')?>
+            <footer>
+                <div class="menu_bottom">
+                    <a href="/about-us.html"><h3>Abouts us</h3></a>
+                    <a href="/contact-us.html"><h3>Contact us</h3></a>
+                    <a href="/privacy.html"><h3>Privacy</h3></a>
+                </div>
+                <div class="croll">
+                    <div class="big"><i class="icongec-backtop"></i></div>
+                    <div class="small"><i class="icongec-backtop_mb"></i></div>
+                </div>
+            </footer>
         </div>
     </div>
 </div>
@@ -177,6 +170,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['email']) && isset($_PO
 <script type="text/javascript" src="<?=$base_url?>/assets/js/files/combo.js"></script>
 <script type="text/javascript" src="<?=$base_url?>/assets/js/files/video.js"></script>
 <script type="text/javascript" src="<?=$base_url?>/assets/js/files/jquery.tinyscrollbar.min.js"></script>
+<?php include('../app/views/partials/footer.php')?>
 </body>
 </html>
 <?php
