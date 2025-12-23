@@ -128,22 +128,23 @@
 
   <div class="main_body">
     <div style="color:#FFF;padding:18px;">
-	  <h1 style="text-transform:uppercase;font-size:20px;"><?=$website_name?> - Best site to watch anime online for FREE.</h1>
-      <p>When we create gogoanime, we hope for anime fans to have a free anime streaming site with good design and easy to use. Understand the importance of user feedback, as time passes by, we’ve collected all your ideas and requests to make a better version of gogoanime.</p>
-      <p>To avoid multiple blocking, we also decided to moved to gogoanime as <?=$website_name?> With a new domain and better user experience for our beloved anime fans in the world.</p>
-	  <h6 style="font-size:18px;">What's <?=$website_name?>?</h6>
-	  <p><?=$website_name?> is a completely free streaming site for users to watch or download anime in HD quality with English subtitles or dubbing. A vast database, fast update and no registering requirement.</p>
-	  <h6 style="font-size:18px;>Is <?=$website_name?> safe?</h6>
-	  <p>Absolutely! We make changes to improve user experience. <?=$website_name?> is completely safe. If you find any ads that are suspicious, please forward us the information and we will remove it. Hope you will understand that the advertising is needed to maintain the site.</p>
-	  <h6 style="font-size:18px;>Why should I choose <?=$website_name?> ?</h6>
-	  <p>Streaming experience: fast loading and easy to download. We have all the top line streaming servers for you to choose.</p>
-	  <p>Content library: We have all the anime here, from old anime to the new one. You can find all the genres you like such as action; drama; fiction; mystery,... You can also request your favorite anime at gogotaku.info.</p>
-	  <p>Update: Vast content and updating hourly is always a strong point of gogoanime as well as <?=$website_name?>.</p>
-	  <p>Quality/Resolution: We provide high-quality anime in multiple resolutions and allow users to choose the one that suits their preferences and device capabilities</p>
-	  <p>Customer care: Users can always contact us for help or query by clicking on contact us or report the episode.</p>
-	  <p>Device compatibility: <?=$website_name?> work well on both desktop and mobile devices. Fell free to enjoy your favorite anime on any device you want.</p>
-	  <p>Therefore, if you are looking for a great and safe website to watch anime for free. Let’s try <?=$website_name?>. And if you like us, please help spread the word to others and don’t forget to bookmark our site.</p>
-	  <p>Many thanks!</p>
+      <h1 style="text-transform:uppercase;font-size:20px;"><?=$website_name?> - Anime Streaming Platform</h1>
+      <p>The <?=$website_name?> platform provides a user interface for accessing and viewing anime content. This service is provided on an "as-is" and "as available" basis, without warranties of any kind.</p>
+      <p>By accessing this website, you acknowledge and agree to our <a href="/terms.html" style="color:#ffc119;">Terms of Service</a> and <a href="/privacy.html" style="color:#ffc119;">Privacy Policy</a>.</p>
+
+      <h6 style="font-size:18px;">Platform Scope & Content Disclaimer</h6>
+      <p><?=$website_name?> functions as a content indexing and embedded video playback service. All video content is hosted by third-party providers. <?=$website_name?> does not host, upload, or control the video content displayed. We expressly disclaim all liability regarding the availability, accuracy, or legality of content hosted on third-party servers.</p>
+
+      <h6 style="font-size:18px;">Service Availability & Limitation of Liability</h6>
+      <p>While we aim to maintain platform functionality, we do not guarantee uninterrupted access or error-free operation. Users agree that the use of this service is at their sole risk. To the fullest extent permitted by law, <?=$website_name?> and its operators shall not be liable for any direct, indirect, incidental, or consequential damages arising from the use or inability to use the service.</p>
+
+      <h6 style="font-size:18px;">User Responsibility</h6>
+      <p>Users are responsible for ensuring their use of this platform complies with all applicable local laws and regulations. Any interaction with third-party advertisements or external links is solely between the user and the third party.</p>
+
+      <h6 style="font-size:18px;">Copyright & IP Compliance</h6>
+      <p><?=$website_name?> respects intellectual property rights. If you believe your copyright has been infringed by content accessible through our platform, please contact us via our designated contact channels for review.</p>
+
+      <p>For full legal details, please refer to our <a href="/terms.html" style="color:#ffc119;">Terms of Service</a>.</p>
     </div>
   </div>
 
@@ -155,9 +156,10 @@
           <div class="clr"></div>
 <footer>
   <div class="menu_bottom">
-    <a href="/about-us.html"><h3>Abouts us</h3></a>
-    <a href="/contact-us.html"><h3>Contact us</h3></a>
+    <a href="/about-us.html"><h3>About Us</h3></a>
+    <a href="/contact-us.html"><h3>Contact Us</h3></a>
     <a href="/privacy.html"><h3>Privacy</h3></a>
+    <a href="/terms.html"><h3>Terms of Service</h3></a>
   </div>
   <div class="croll">
     <div class="big"><i class="icongec-backtop"></i></div>

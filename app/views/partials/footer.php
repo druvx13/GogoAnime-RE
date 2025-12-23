@@ -15,3 +15,12 @@ $(document).ready(function () {
   }
 </style>
 <!---<div class="bg-notice" style="position:fixed;z-index:9999;background:#ffc119;bottom:0;text-align:center;color:#000;width:100%;padding:10px 0;font-weight:600;">We moved site to <a href="<?=$base_url?>" title="<?=$base_url?>" alt="Gogoanime"><?=$base_url?></a>. Please bookmark new site. Thank you!</div><div class="btn-notice" style="position:fixed;z-index:9999;background:#00a651;color:#fff;cursor:pointer;right:0;padding:3px 8px;">x</div>--->
+<div style="text-align:center; padding:10px; color:#ccc; font-size:12px;">
+  <p>&copy; <?=date("Y")?> <?=$website_name?>. All rights reserved.</p>
+  <p>
+    <a href="/terms.html" style="color:#888;">Terms of Service</a> |
+    <a href="/privacy.html" style="color:#888;">Privacy Policy</a> |
+    <a href="/contact-us.html" style="color:#888;">Contact</a>
+  </p>
+  <p>Disclaimer: This site does not store any files on its server. All contents are provided by non-affiliated third parties.</p>
+</div>

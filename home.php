@@ -376,13 +376,16 @@ if ($searchQuery !== '') {
                 <footer>
                     <div class="menu_bottom">
                         <a href="/about-us.html">
-                            <h3>Abouts us</h3>
+                            <h3>About Us</h3>
                         </a>
                         <a href="/contact-us.html">
-                            <h3>Contact us</h3>
+                            <h3>Contact Us</h3>
                         </a>
                         <a href="/privacy.html">
                             <h3>Privacy</h3>
+                        </a>
+                        <a href="/terms.html">
+                            <h3>Terms of Service</h3>
                         </a>
                     </div>
                     <div class="croll">
