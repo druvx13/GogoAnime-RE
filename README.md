@@ -73,31 +73,40 @@ The application follows a page-controller pattern where specific URL endpoints m
 -   **`genre/`**: Genre-specific routing handlers.
 -   **`staticHTML/`**: Static page templates (Login, Privacy, etc.).
 -   **`status/`**: Handlers for anime status filtering (Ongoing/Completed).
+-   **`sub-category/`**: Sub-category routing logic.
 -   **`Root`**: Primary public-facing entry points (`index.php`, `anime-details.php`, etc.).
 
 ## 8. Installation & Setup Summary
 1.  **Clone Repository:** Download the source code.
-2.  **Database Setup:** Import the schema into a MySQL database.
+2.  **Database Setup:** Import `database.sql` into a MySQL database.
 3.  **Configuration:**
     -   Copy `app/config/db.php` (or create `app/config/config.local.php`).
     -   Update database credentials (`host`, `dbname`, `username`, `password`).
 4.  **Server Config:** Ensure Apache `mod_rewrite` is enabled. Point document root to the repository root.
 5.  **Permissions:** Ensure `assets/uploads` is writable.
 
+*See [INSTALLATION.md](INSTALLATION.md) for detailed instructions.*
+
 ## 9. Configuration Overview
 The system is configured primarily through PHP files located in `app/config/`.
 -   **`db.php`**: Database connection settings.
 -   **`info.php`**: Site-wide metadata.
--   **`csrf.php`**: Security token management.
+-   **`app.json`**: Deployment metadata.
+
+*See [CONFIGURATION.md](CONFIGURATION.md) for details.*
 
 ## 10. Administration Overview
-Access the admin panel via `/admin/`. Default credentials must be set directly in the database or via the registration of the first admin user. Capabilities include adding anime, managing episodes, and moderating users.
+Access the admin panel via `/admin/`. Default credentials must be set directly in the database or via the registration of the first admin user (see implementation details). Capabilities include adding anime, managing episodes, and moderating users.
+
+*See [ADMIN_GUIDE.md](ADMIN_GUIDE.md) for the operator manual.*
 
 ## 11. Security Model Summary
 -   **Authentication:** Session-based login with hashed passwords.
 -   **Authorization:** Role-based checks (Admin vs. Standard User).
--   **Input Handling:** PDO prepared statements are used for database interaction to prevent SQL injection.
+-   **Input Handling:** PDO prepared statements are used for database interaction to prevent SQL injection (verify in code reviews).
 -   **CSRF Protection:** Implemented in critical forms (see `app/config/csrf.php`).
+
+*See [SECURITY.md](SECURITY.md) for a full security audit and guidelines.*
 
 ## 12. Operational Notes
 -   **Video Hosting:** The system does not host video files directly; it embeds links from external providers.
@@ -114,6 +123,12 @@ Access the admin panel via `/admin/`. Default credentials must be set directly i
 -   **Limitation:** User registration does not include email verification by default (requires configuration).
 
 ## 15. Licensing Summary
-This software is provided under the MIT License.
+This software is proprietary and confidential unless explicitly open-sourced under a specific license file.
 
 *See [LICENSE](LICENSE) for legal terms.*
+
+## 16. References
+-   [Architecture Document](ARCHITECTURE.md)
+-   [System Overview](SYSTEM_OVERVIEW.md)
+-   [Directory Structure](DIRECTORY_STRUCTURE.md)
+-   [Documentation Index](DOCUMENTATION_INDEX.md)

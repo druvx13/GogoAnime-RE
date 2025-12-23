@@ -1,20 +1,5 @@
-<?php
-/**
- * Forget Password Page
- *
- * This file renders the "Forget Password" page.
- * Currently, it serves as a template and does not contain active mail recovery logic.
- *
- * @package    GogoAnime Clone
- * @subpackage StaticHTML
- * @author     GogoAnime Clone Contributors
- * @license    MIT License
- */
-
-require_once('../app/config/info.php');
-?>
+<?php require_once('../app/config/info.php'); ?>
 <!DOCTYPE html>
-<html lang="en">
 <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
@@ -23,35 +8,40 @@ require_once('../app/config/info.php');
         <title><?=$website_name?> | Forget</title>
 
         <meta name="robots" content="index, follow" />
-        <meta name="description" content="Recover your account password.">
-        <meta name="keywords" content="forget password, recover account, <?=$website_name?>">
+        <meta name="description" content="Watch anime online in English. You can watch free series and movies online and English subtitle.">
+        <meta name="keywords" content="gogoanime,watch anime, anime online, free anime, english anime, sites to watch anime">
         <meta itemprop="image" content="<?=$base_url?>/assets/img/logo.png" />
 
-        <meta property="og:site_name" content="<?=$website_name?>" />
+        <meta property="og:site_name" content="Gogoanime" />
         <meta property="og:locale" content="en_US" />
         <meta property="og:type" content="website" />
         <meta property="og:title" content="<?=$website_name?> | Forget" />
-        <meta property="og:description" content="Recover your account password.">
+        <meta property="og:description" content="Watch anime online in English. You can watch free series and movies online and English subtitle.">
         <meta property="og:url" content="" />
         <meta property="og:image" content="<?=$base_url?>/assets/img/logo.png" />
         <meta property="og:image:secure_url" content="<?=$base_url?>/assets/img/logo.png" />
 
         <meta property="twitter:card" content="summary" />
         <meta property="twitter:title" content="<?=$website_name?> | Forget" />
-        <meta property="twitter:description" content="Recover your account password." />
+        <meta property="twitter:description" content="Watch anime online in English. You can watch free series and movies online and English subtitle." />
 
         <link rel="canonical" href="<?=$base_url?><?php echo $_SERVER['REQUEST_URI'] ?>" />
         <link rel="alternate" hreflang="en-us" href="<?=$base_url?><?php echo $_SERVER['REQUEST_URI'] ?>" />
 
+
+
         <link rel="stylesheet" type="text/css" href="<?=$base_url?>/assets/css/style.css" />
         <link rel="stylesheet" type="text/css" href="<?=$base_url?>/assets/css/user_auth.css" />
-        <link rel="stylesheet" type="text/css" href="<?=$base_url?>/assets/css/user.css" />
+    
+    <link rel="stylesheet" type="text/css" href="<?=$base_url?>/assets/css/user.css" />
 
         <?php require_once('../app/views/partials/advertisements/popup.html'); ?>
 
         <script type="text/javascript" src="<?=$base_url?>/assets/js/libraries/jquery.js"></script>
         <script>
-                var base_url = '<?=$base_url?>/';
+                var base_url = 'https://' + document.domain + '/';
+                var base_url_cdn_api = 'https://ajax.gogocdn.net/';
+                var api_anclytic = 'https://ajax.gogocdn.net/anclytic-ajax.html';
         </script>
         <script type="text/javascript" src="https://cdn.gogocdn.net/files/gogo/js/main.js?v=6.9"></script>
 
@@ -81,13 +71,21 @@ require_once('../app/config/info.php');
         <div class="content-login">
                 <div class="form-login">
                 <h1>Forget password</h1>
-                    <p class="myptag">* This feature is currently disabled.<br>Please contact support for assistance.</p>
+                    <p class="myptag">* this is just a template.<br>No function has been implemented. Feel free to modify the code!</p>
+
+
+                    <a href="<?=$base_url?>" class="btn-google">
+                        <span>
+                            <img src="https://gogoanime3.co/img/google.png" alt="google" />                        </span>
+                        Continue with Google
+                    </a>
+
                     
-                    <form method='post' action="">
+                    <form method='post' ><input type='hidden' name='_csrf' value='65e73d7caf3b7' >    
                         <input type='email' name='email'  placeholder='Email'  required='true'  value=''>       
-                        <button type='submit' onclick="alert('Feature disabled'); return false;">Request Mail</button>
-                    </form>
-                    <a class="link-forget" href="/login.html">Sign in</a>
+                        <button type='submit' >request mail</button>    
+                        </form>    
+                        <a class="link-forget" href="/login.html">Sign in</a>
                     <a class="link-sign" href="/register.html">Create new account</a>
 
                 </div>
@@ -114,7 +112,17 @@ require_once('../app/config/info.php');
                      </section>                                                                              
                 </section>                
                 <div class="clr"></div>
-                <?php include('../app/views/partials/footer.php')?>
+<footer>
+  <div class="menu_bottom">
+    <a href="/about-us.html"><h3>Abouts us</h3></a>
+    <a href="/contact-us.html"><h3>Contact us</h3></a>
+    <a href="/privacy.html"><h3>Privacy</h3></a>
+  </div>
+  <div class="croll">
+    <div class="big"><i class="icongec-backtop"></i></div>
+    <div class="small"><i class="icongec-backtop_mb"></i></div>
+  </div>
+</footer>
             </div>
         </div>
 </div>
@@ -124,5 +132,7 @@ require_once('../app/config/info.php');
 <script type="text/javascript" src="<?=$base_url?>/assets/js/files/combo.js"></script>
     <script type="text/javascript" src="<?=$base_url?>/assets/js/files/video.js"></script>
         <script type="text/javascript" src="<?=$base_url?>/assets/js/files/jquery.tinyscrollbar.min.js"></script>
+        <?php include('../app/views/partials/footer.php')?>
+
 </body>
 </html>

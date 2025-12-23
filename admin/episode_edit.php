@@ -1,38 +1,15 @@
 <?php
-/**
- * Admin Edit Episode
- *
- * This page allows administrators to update an existing episode.
- * Users can change the anime association, episode number, title, and manage
- * video sources (add new URLs, upload new files, update existing links).
- *
- * @package    GogoAnime Clone
- * @subpackage Admin
- * @author     GogoAnime Clone Contributors
- * @license    MIT License
- */
-
 require_once 'auth.php';
 require_once '../app/config/db.php';
 require_once 'layout/header.php';
 
-// Fetch all anime
-try {
-    $anime_stmt = $conn->query("SELECT id, title FROM anime ORDER BY title ASC");
-    $animes = $anime_stmt->fetchAll(PDO::FETCH_ASSOC);
-} catch (PDOException $e) {
-    $animes = [];
-    error_log("Failed to fetch anime list: " . $e->getMessage());
-}
+// Fetch all anime for the dropdown
+$anime_stmt = $conn->query("SELECT id, title FROM anime ORDER BY title ASC");
+$animes = $anime_stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Fetch active providers
-try {
-    $providersStmt = $conn->query("SELECT * FROM video_providers WHERE is_active = 1 ORDER BY id ASC");
-    $providers = $providersStmt->fetchAll(PDO::FETCH_ASSOC);
-} catch (PDOException $e) {
-    $providers = [];
-    error_log("Failed to fetch providers: " . $e->getMessage());
-}
+$providersStmt = $conn->query("SELECT * FROM video_providers WHERE is_active = 1 ORDER BY id ASC");
+$providers = $providersStmt->fetchAll(PDO::FETCH_ASSOC);
 
 $error = '';
 $success = '';
@@ -45,35 +22,28 @@ if (!$id) {
 }
 
 // Fetch existing episode data
-try {
-    $stmt = $conn->prepare("SELECT * FROM episodes WHERE id = :id");
-    $stmt->execute(['id' => $id]);
-    $episode = $stmt->fetch(PDO::FETCH_ASSOC);
+$stmt = $conn->prepare("SELECT * FROM episodes WHERE id = :id");
+$stmt->execute(['id' => $id]);
+$episode = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    if (!$episode) {
-        echo "<div class='alert alert-danger'>Episode not found</div>";
-        require_once 'layout/footer.php';
-        exit;
-    }
-
-    // Fetch existing videos for this episode
-    $videosStmt = $conn->prepare("SELECT * FROM episode_videos WHERE episode_id = :id");
-    $videosStmt->execute(['id' => $id]);
-    $existing_videos = [];
-    while($row = $videosStmt->fetch(PDO::FETCH_ASSOC)) {
-        $existing_videos[$row['provider_id']] = $row['video_url'];
-    }
-} catch (PDOException $e) {
-    echo "<div class='alert alert-danger'>Database Error: " . htmlspecialchars($e->getMessage()) . "</div>";
+if (!$episode) {
+    echo "<div class='alert alert-danger'>Episode not found</div>";
     require_once 'layout/footer.php';
     exit;
 }
 
+// Fetch existing videos for this episode
+$videosStmt = $conn->prepare("SELECT * FROM episode_videos WHERE episode_id = :id");
+$videosStmt->execute(['id' => $id]);
+$existing_videos = [];
+while($row = $videosStmt->fetch(PDO::FETCH_ASSOC)) {
+    $existing_videos[$row['provider_id']] = $row['video_url'];
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Sanitize Inputs
-    $anime_id = (int)$_POST['anime_id'];
-    $episode_number = (float)$_POST['episode_number'];
-    $title = filter_var($_POST['title'], FILTER_SANITIZE_STRING);
+    $anime_id = $_POST['anime_id'];
+    $episode_number = $_POST['episode_number'];
+    $title = $_POST['title'];
     $video_urls_input = $_POST['video_urls'] ?? [];
 
     $uploaded_video_url = '';
@@ -84,8 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!is_dir($upload_dir)) {
             mkdir($upload_dir, 0755, true);
         }
-
-        $filename = time() . '_' . preg_replace('/[^a-zA-Z0-9_\-\.]/', '', basename($_FILES['video']['name']));
+        $filename = time() . '_' . basename($_FILES['video']['name']);
         $target_file = $upload_dir . $filename;
 
         // Simple validation for video types
@@ -96,10 +65,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
              if (move_uploaded_file($_FILES['video']['tmp_name'], $target_file)) {
                  $uploaded_video_url = '/assets/uploads/videos/' . $filename;
              } else {
-                 $error = "Failed to upload video file.";
+                 $error = "Failed to upload video.";
              }
         } else {
-            $error = "Invalid video format. Allowed: mp4, mkv, webm, avi.";
+            $error = "Invalid video format.";
         }
     }
 
@@ -128,7 +97,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // 2. Update Video Providers
 
-            // Handle uploaded file -> Local provider linkage
+            // Handle uploaded file -> Local provider
             if ($uploaded_video_url) {
                 // Find Local provider ID
                 $localProv = null;
@@ -144,22 +113,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             // Sync all providers
+            $upsertStmt = $conn->prepare("
+                INSERT INTO episode_videos (episode_id, provider_id, video_url)
+                VALUES (:eid, :pid, :url)
+                ON DUPLICATE KEY UPDATE video_url = :url
+            ");
+            // SQLite doesn't support ON DUPLICATE KEY UPDATE in standard syntax easily universally (newer versions do ON CONFLICT).
+            // Let's use delete and insert, or check existing.
+            // Since we are replacing logic, deleting all and re-inserting is simplest but might lose IDs (though IDs are just autoinc).
+            // Actually, let's try to update if exists, insert if not.
+
+            // First, delete videos that are cleared (empty string)
+            // Or just loop and update/insert
+
             foreach ($providers as $provider) {
                 $pid = $provider['id'];
                 $url = isset($video_urls_input[$pid]) ? trim($video_urls_input[$pid]) : '';
 
                 if (empty($url)) {
-                    // Remove if empty
+                    // Remove if exists
                     $conn->prepare("DELETE FROM episode_videos WHERE episode_id = ? AND provider_id = ?")->execute([$id, $pid]);
                 } else {
                     // Check if exists
                     $check = $conn->prepare("SELECT id FROM episode_videos WHERE episode_id = ? AND provider_id = ?");
                     $check->execute([$id, $pid]);
                     if ($check->fetch()) {
-                        // Update
                         $conn->prepare("UPDATE episode_videos SET video_url = ? WHERE episode_id = ? AND provider_id = ?")->execute([$url, $id, $pid]);
                     } else {
-                        // Insert
                         $conn->prepare("INSERT INTO episode_videos (episode_id, provider_id, video_url) VALUES (?, ?, ?)")->execute([$id, $pid, $url]);
                     }
                 }
@@ -183,7 +163,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } catch(PDOException $e) {
             $conn->rollBack();
             $error = "Error updating episode: " . $e->getMessage();
-            error_log("Update episode error: " . $e->getMessage());
         }
     }
 }
@@ -191,27 +170,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <h2>Edit Episode</h2>
 
-<?php if($error): ?><div class="alert alert-danger"><?=htmlspecialchars($error)?></div><?php endif; ?>
-<?php if($success): ?><div class="alert alert-success"><?=htmlspecialchars($success)?></div><?php endif; ?>
+<?php if($error): ?><div class="alert alert-danger"><?=$error?></div><?php endif; ?>
+<?php if($success): ?><div class="alert alert-success"><?=$success?></div><?php endif; ?>
 
 <form method="POST" enctype="multipart/form-data">
     <?php csrf_field(); ?>
     <div class="mb-3">
-        <label for="anime_id" class="form-label">Select Anime</label>
-        <select id="anime_id" name="anime_id" class="form-select" required>
+        <label>Select Anime</label>
+        <select name="anime_id" class="form-control" required>
             <option value="">-- Select Anime --</option>
             <?php foreach($animes as $anime): ?>
-                <option value="<?=$anime['id']?>" <?=($episode['anime_id'] == $anime['id']) ? 'selected' : ''?>><?=htmlspecialchars($anime['title'])?></option>
+                <option value="<?=$anime['id']?>" <?=($episode['anime_id'] == $anime['id']) ? 'selected' : ''?>><?=$anime['title']?></option>
             <?php endforeach; ?>
         </select>
     </div>
     <div class="mb-3">
-        <label for="episode_number" class="form-label">Episode Number</label>
-        <input type="number" step="0.1" id="episode_number" name="episode_number" class="form-control" value="<?=htmlspecialchars($episode['episode_number'])?>" required>
+        <label>Episode Number</label>
+        <input type="number" step="0.1" name="episode_number" class="form-control" value="<?=htmlspecialchars($episode['episode_number'])?>" required>
     </div>
     <div class="mb-3">
-        <label for="title" class="form-label">Episode Title (Optional)</label>
-        <input type="text" id="title" name="title" class="form-control" value="<?=htmlspecialchars($episode['title'])?>">
+        <label>Episode Title (Optional)</label>
+        <input type="text" name="title" class="form-control" value="<?=htmlspecialchars($episode['title'])?>">
     </div>
 
     <hr>
@@ -219,7 +198,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <?php foreach($providers as $provider): ?>
         <div class="mb-3 border p-3 rounded">
-            <strong><?=htmlspecialchars($provider['label'])?></strong> (<?=htmlspecialchars($provider['name'])?>)
+            <strong><?=$provider['label']?></strong> (<?=$provider['name']?>)
 
             <?php
             $is_local = (stripos($provider['name'], 'Local') !== false || stripos($provider['name'], 'Gogo') !== false);
@@ -228,16 +207,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <?php if ($is_local): ?>
                 <div class="mt-2">
-                    <label class="form-label">Upload New File</label>
+                    <label>Upload New File</label>
                     <input type="file" name="video" class="form-control" accept="video/*">
                     <?php if($current_url): ?>
-                        <small class="text-success">Current: <a href="<?=htmlspecialchars($current_url)?>" target="_blank">View Video</a></small>
+                        <small class="text-success">Current: <a href="<?=$current_url?>" target="_blank">View Video</a></small>
                     <?php endif; ?>
                 </div>
             <?php endif; ?>
 
             <div class="mt-2">
-                <label class="form-label">Video URL / Iframe</label>
+                <label>Video URL / Iframe</label>
                 <input type="text" name="video_urls[<?=$provider['id']?>]" class="form-control" value="<?=htmlspecialchars($current_url)?>" placeholder="https://...">
             </div>
         </div>

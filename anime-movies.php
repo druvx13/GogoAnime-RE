@@ -1,34 +1,15 @@
 <?php
-/**
- * Anime Movies Page
- *
- * This page displays a list of anime classified as "Movies".
- * It queries the database for anime entries where type is 'Movie'.
- *
- * @package    GogoAnime Clone
- * @subpackage Root
- * @author     GogoAnime Clone Contributors
- * @license    MIT License
- */
-
 require_once('./app/config/info.php');
 require_once('./app/config/db.php');
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-    <link rel="shortcut icon" href="<?=$base_url?>/assets/img/favicon.ico">
     <title>Anime Movies - <?=$website_name?></title>
-
-    <meta name="robots" content="index, follow" />
-    <meta name="description" content="Watch anime movies online on <?=$website_name?>.">
-    <meta name="keywords" content="anime movies, watch anime movies, <?=$website_name?>">
-
     <link rel="stylesheet" type="text/css" href="<?=$base_url?>/assets/css/style.css" />
     <script type="text/javascript" src="<?=$base_url?>/assets/js/libraries/jquery.js"></script>
-    <script type="text/javascript" src="https://cdn.gogocdn.net/files/gogo/js/main.js"></script>
 </head>
 <body>
     <div id="wrapper_inside">
@@ -45,41 +26,28 @@ require_once('./app/config/db.php');
                             <div class="last_episodes">
                                 <ul class="items">
                                     <?php
-                                    try {
-                                        // Fetch anime movies
-                                        $stmt = $conn->query("SELECT * FROM anime WHERE type = 'Movie' ORDER BY release_date DESC LIMIT 20");
-                                        $movies = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                                    $stmt = $conn->query("SELECT * FROM anime WHERE type = 'Movie' ORDER BY release_date DESC LIMIT 20");
+                                    $movies = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-                                        foreach($movies as $anime) {
-                                            $link = "/anime-details.php?id=" . $anime['id'];
-                                            $title = htmlspecialchars($anime['title']);
-                                            $img = htmlspecialchars($anime['image_url']);
-                                            $date = htmlspecialchars($anime['release_date']);
-                                            echo "<li>
-                                                <div class='img'>
-                                                    <a href='$link' title='$title'>
-                                                        <img src='$img' alt='$title' />
-                                                    </a>
-                                                </div>
-                                                <p class='name'><a href='$link' title='$title'>$title</a></p>
-                                                <p class='released'>Released: $date</p>
-                                            </li>";
-                                        }
-
-                                        if (empty($movies)) {
-                                            echo "<p class='text-center'>No anime movies found.</p>";
-                                        }
-                                    } catch (PDOException $e) {
-                                        echo "<p>Error loading movies.</p>";
-                                        error_log("Anime Movies query error: " . $e->getMessage());
+                                    foreach($movies as $anime) {
+                                        $link = "/anime-details.php?id=" . $anime['id'];
+                                        $title = htmlspecialchars($anime['title']);
+                                        $img = htmlspecialchars($anime['image_url']);
+                                        $date = htmlspecialchars($anime['release_date']);
+                                        echo "<li>
+                                            <div class='img'>
+                                                <a href='$link' title='$title'>
+                                                    <img src='$img' alt='$title' />
+                                                </a>
+                                            </div>
+                                            <p class='name'><a href='$link' title='$title'>$title</a></p>
+                                            <p class='released'>Released: $date</p>
+                                        </li>";
                                     }
                                     ?>
                                 </ul>
                             </div>
                         </div>
-                    </section>
-                    <section class="content_right">
-                        <?php require_once('./app/views/partials/sub-category.html'); ?>
                     </section>
                 </section>
                 <?php include('./app/views/partials/footer.php'); ?>

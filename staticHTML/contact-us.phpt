@@ -7,7 +7,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
         <link rel="shortcut icon" href="<?=$base_url?>/assets/img/favicon.ico">
 
-        <title><?=$website_name?> | Privacy</title>
+        <title>Watch anime online, English anime online - <?=$website_name?></title>
 
         <meta name="robots" content="index, follow" />
         <meta name="description" content="Watch anime online in English. You can watch free series and movies online and English subtitle.">
@@ -17,14 +17,14 @@
         <meta property="og:site_name" content="Gogoanime" />
         <meta property="og:locale" content="en_US" />
         <meta property="og:type" content="website" />
-        <meta property="og:title" content="<?=$website_name?> | Privacy" />
+        <meta property="og:title" content="Watch anime online, English anime online - <?=$website_name?>" />
         <meta property="og:description" content="Watch anime online in English. You can watch free series and movies online and English subtitle.">
         <meta property="og:url" content="" />
         <meta property="og:image" content="<?=$base_url?>/assets/img/logo.png" />
         <meta property="og:image:secure_url" content="<?=$base_url?>/assets/img/logo.png" />
 
         <meta property="twitter:card" content="summary" />
-        <meta property="twitter:title" content="<?=$website_name?> | Privacy" />
+        <meta property="twitter:title" content="Watch anime online, English anime online - <?=$website_name?>" />
         <meta property="twitter:description" content="Watch anime online in English. You can watch free series and movies online and English subtitle." />
 
         <link rel="canonical" href="<?=$base_url?><?php echo $_SERVER['REQUEST_URI'] ?>" />
@@ -57,39 +57,35 @@
                                                 <div class="main_body">
                                                         <div class="anime_name ongoing">
                                                                 <div class="anime_name_img_ongoing"></div>
-                                                                <h2>privacy</h2>
+                                                                <h2>Contact Us</h2>
                                                         </div>
                                                         <div class="content_privacy" style="color:#FFF; padding: 20px;">
-                                                                <strong>Cookies &amp; 3rd Party Advertisements</strong>
-                                                                <p>Google, as a third party vendor, uses cookies to
-                                                                        serve ads on your site. Google's use of the DART
-                                                                        cookie enables it to serve ads to your users
-                                                                        based on their visit to your sites and other
-                                                                        sites on the Internet. Users may opt out of the
-                                                                        use of the DART cookie by visiting the <a
-                                                                                href="https://www.google.com/privacy_ads.html"
-                                                                                target="_blank" rel="nofollow">Google ad
-                                                                                and content network privacy policy</a>.
-                                                                </p>
-                                                                <p>We allow third-party companies to serve ads and/or
-                                                                        collect certain anonymous information when you
-                                                                        visit our web site. These companies may use
-                                                                        non-personally identifiable information (e.g.,
-                                                                        click stream information, browser type, time and
-                                                                        date, subject of advertisements clicked or
-                                                                        scrolled over) during your visits to this and
-                                                                        other Web sites in order to provide
-                                                                        advertisements about goods and services likely
-                                                                        to be of greater interest to you. These
-                                                                        companies typically use a cookie or third party
-                                                                        web beacon to collect this information. To learn
-                                                                        more about this behavioral advertising practice
-                                                                        or to opt-out of this type of advertising, you
-                                                                        can visit <a
-                                                                                href="https://www.networkadvertising.org/managing/opt_out.asp"
-                                                                                target="_blank"
-                                                                                rel="nofollow">https://www.networkadvertising.org/managing/opt_out.asp</a>.
-                                                                </p>
+                                                        <h1 class="entry-title">Contact Us</h1>
+                                                        <p>If you have business inquiries or other questions, please fill out the following form to contact us or send an email to <a href="mailto:contact@example.com">contact@example.com</a>. Thank you.</p>
+
+
+                    <p>Fields with * are required.</p>
+                    <div class="form-contact">
+                        <form method='post' ><input type='hidden' name='_csrf' value='65e73d7caf3b7' >                        <div class="row">
+                            <label>Name *</label><br />
+                            <input type='text' name='name'  required='true'  value=''>                        </div>
+                        <div class="row">
+                            <label>Email *</label><br />
+                            <input type='email' name='email'  required='true'  value=''>                        </div>
+                        <div class="row">
+                            <label>Subject *</label><br />
+                            <input type='text' name='subject'  required='true'  value=''>                        </div>
+                        <div class="row">
+                            <label>Body *</label><br />
+                            <textarea name='body'  required='true' ></textarea>                        </div>
+                        <div class="row">
+                            <label></label>
+						<div class="clr"></div><br />
+                        <div class="contact-input">
+                            <label></label>
+                            <button type='submit' >Submit</button>                        </div>
+                        </form>
+                        </form>                    </div>
                                                         </div>
                                                 </div>
 
@@ -205,7 +201,7 @@
         <div id="off_light"></div>
         <div class="clr"></div>
         <div class="mask"></div>
-            <script type="text/javascript" src="<?=$base_url?>/assets/js/files/combo.js"></script>
+        <script type="text/javascript" src="<?=$base_url?>/assets/js/files/combo.js"></script>
     <script type="text/javascript" src="<?=$base_url?>/assets/js/files/video.js"></script>
         <script type="text/javascript" src="<?=$base_url?>/assets/js/files/jquery.tinyscrollbar.min.js"></script>
         <?php include('../app/views/partials/footer.php')?>

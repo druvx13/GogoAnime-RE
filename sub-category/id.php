@@ -1,4 +1,53 @@
-<?php require_once('../app/config/info.php'); ?>
+<?php 
+require_once('../app/config/info.php');
+require_once('../app/config/db.php'); // Include DB
+
+$parts=parse_url($_SERVER['REQUEST_URI']); 
+$page_url=explode('/', $parts['path']);
+$id = $page_url[count($page_url)-1];
+//$id = "winter-2022-anime";
+$subCategory = str_replace("-", " ", $id);
+$subCategory = ucwords($subCategory);
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+if ($page < 1) $page = 1;
+$limit = 20;
+$offset = ($page - 1) * $limit;
+
+// [GAP-001] Native MySQL Implementation for Sub-Category (Season/Year)
+// Logic: Try to match 'Year' from the ID string against 'release_date' column.
+// Example: "winter-2022-anime" -> extract "2022"
+preg_match('/\d{4}/', $id, $matches);
+$year = isset($matches[0]) ? $matches[0] : '';
+
+// Count
+$countSql = "SELECT COUNT(*) FROM anime WHERE 1=1";
+$params = [];
+if ($year) {
+    $countSql .= " AND release_date LIKE :year";
+    $params[':year'] = "%$year%";
+}
+
+$countStmt = $conn->prepare($countSql);
+$countStmt->execute($params);
+$totalAnime = $countStmt->fetchColumn();
+$totalPages = ceil($totalAnime / $limit);
+
+// Fetch
+$sql = "SELECT id, title, image_url, status, release_date FROM anime WHERE 1=1";
+if ($year) {
+    $sql .= " AND release_date LIKE :year";
+}
+$sql .= " ORDER BY created_at DESC LIMIT :limit OFFSET :offset";
+
+$stmt = $conn->prepare($sql);
+if ($year) {
+    $stmt->bindValue(':year', "%$year%", PDO::PARAM_STR);
+}
+$stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+$stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+$stmt->execute();
+$animeList = $stmt->fetchAll(PDO::FETCH_ASSOC);
+?>
 <!DOCTYPE html>
 <html lang="en-US">
 
@@ -7,34 +56,33 @@
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
         <link rel="shortcut icon" href="<?=$base_url?>/assets/img/favicon.ico">
 
-        <title><?=$website_name?> | Privacy</title>
 
-        <meta name="robots" content="index, follow" />
-        <meta name="description" content="Watch anime online in English. You can watch free series and movies online and English subtitle.">
-        <meta name="keywords" content="gogoanime,watch anime, anime online, free anime, english anime, sites to watch anime">
+        <title>List of <?=$subCategory?> at <?=$website_name?></title>
+
+        <meta name="robots" content="noodp, noydir" />
+        <meta name="description" content="List of <?=$subCategory?> at <?=$website_name?>">
+        <meta name="keywords" content="List genre Anime, Anime Movies">
         <meta itemprop="image" content="<?=$base_url?>/assets/img/logo.png" />
 
-        <meta property="og:site_name" content="Gogoanime" />
+        <meta property="og:site_name" content="<?=$website_name?>" />
         <meta property="og:locale" content="en_US" />
         <meta property="og:type" content="website" />
-        <meta property="og:title" content="<?=$website_name?> | Privacy" />
-        <meta property="og:description" content="Watch anime online in English. You can watch free series and movies online and English subtitle.">
-        <meta property="og:url" content="" />
+        <meta property="og:title" content="List of <?=$subCategory?> at <?=$website_name?>" />
+        <meta property="og:description" content="List of <?=$subCategory?> at <?=$website_name?>">
+        <meta property="og:url" content="<?=$base_url?><?php echo $_SERVER['REQUEST_URI'] ?>" />
         <meta property="og:image" content="<?=$base_url?>/assets/img/logo.png" />
         <meta property="og:image:secure_url" content="<?=$base_url?>/assets/img/logo.png" />
 
         <meta property="twitter:card" content="summary" />
-        <meta property="twitter:title" content="<?=$website_name?> | Privacy" />
-        <meta property="twitter:description" content="Watch anime online in English. You can watch free series and movies online and English subtitle." />
+        <meta property="twitter:title" content="List of <?=$subCategory?> at <?=$website_name?>" />
+        <meta property="twitter:description" content="List of <?=$subCategory?> at <?=$website_name?>" />
 
         <link rel="canonical" href="<?=$base_url?><?php echo $_SERVER['REQUEST_URI'] ?>" />
         <link rel="alternate" hreflang="en-us" href="<?=$base_url?><?php echo $_SERVER['REQUEST_URI'] ?>" />
 
 
 
-        <link rel="stylesheet" type="text/css" href="<?=$base_url?>/assets/css/style.css" />
-
-        <?php require_once('../app/views/partials/advertisements/popup.html'); ?>
+        <link rel="stylesheet" type="text/css" href="<?=$base_url?>/assets/css/style.css?v=7.1" />
 
         <script type="text/javascript" src="<?=$base_url?>/assets/js/libraries/jquery.js"></script>
         <script>
@@ -42,7 +90,8 @@
                 var base_url_cdn_api = 'https://ajax.gogocdn.net/';
                 var api_anclytic = 'https://ajax.gogocdn.net/anclytic-ajax.html';
         </script>
-        <script type="text/javascript" src="https://cdn.gogocdn.net/files/gogo/js/main.js?v=6.9"></script>
+        <?php require_once('../app/views/partials/advertisements/popup.html'); ?>
+        <script type="text/javascript" src="https://cdn.gogocdn.net/files/gogo/js/main.js?v=7.1"></script>
 </head>
 
 <body>
@@ -50,51 +99,55 @@
         <div id="wrapper_inside">
                 <div id="wrapper">
                         <div id="wrapper_bg">
-                           <?php require('../app/views/partials/header.php'); ?>
+                                <?php require_once('../app/views/partials/header.php');?>
                                 <section class="content">
                                         <section class="content_left">
 
                                                 <div class="main_body">
-                                                        <div class="anime_name ongoing">
-                                                                <div class="anime_name_img_ongoing"></div>
-                                                                <h2>privacy</h2>
+                                                        <div class="anime_name anime_movies">
+                                                                <i class="icongec-anime_movies i_pos"></i>
+                                                                <h2><?=$subCategory?></h2>
+                                                                <div class="anime_name_pagination">
+                                                                        <div class="pagination">
+                                                                            <ul class='pagination-list'>
+                                                                                <?php
+                                                                                for ($i = 1; $i <= $totalPages; $i++) {
+                                                                                    if ($i > 5 && $i != $totalPages && $i != $page) continue;
+                                                                                    $active = ($i == $page) ? 'selected' : '';
+                                                                                    echo "<li class='$active'><a href='?page=$i'>$i</a></li>";
+                                                                                }
+                                                                                ?>
+                                                                            </ul>
+                                                                        </div>
+                                                                </div>
                                                         </div>
-                                                        <div class="content_privacy" style="color:#FFF; padding: 20px;">
-                                                                <strong>Cookies &amp; 3rd Party Advertisements</strong>
-                                                                <p>Google, as a third party vendor, uses cookies to
-                                                                        serve ads on your site. Google's use of the DART
-                                                                        cookie enables it to serve ads to your users
-                                                                        based on their visit to your sites and other
-                                                                        sites on the Internet. Users may opt out of the
-                                                                        use of the DART cookie by visiting the <a
-                                                                                href="https://www.google.com/privacy_ads.html"
-                                                                                target="_blank" rel="nofollow">Google ad
-                                                                                and content network privacy policy</a>.
-                                                                </p>
-                                                                <p>We allow third-party companies to serve ads and/or
-                                                                        collect certain anonymous information when you
-                                                                        visit our web site. These companies may use
-                                                                        non-personally identifiable information (e.g.,
-                                                                        click stream information, browser type, time and
-                                                                        date, subject of advertisements clicked or
-                                                                        scrolled over) during your visits to this and
-                                                                        other Web sites in order to provide
-                                                                        advertisements about goods and services likely
-                                                                        to be of greater interest to you. These
-                                                                        companies typically use a cookie or third party
-                                                                        web beacon to collect this information. To learn
-                                                                        more about this behavioral advertising practice
-                                                                        or to opt-out of this type of advertising, you
-                                                                        can visit <a
-                                                                                href="https://www.networkadvertising.org/managing/opt_out.asp"
-                                                                                target="_blank"
-                                                                                rel="nofollow">https://www.networkadvertising.org/managing/opt_out.asp</a>.
-                                                                </p>
+                                                        <div class="last_episodes">
+                                                                <ul class="items">
+                                                                <?php foreach($animeList as $anime)  {
+                                                                    $link = "/anime-details.php?id=" . $anime['id'];
+                                                                    $title = htmlspecialchars($anime['title']);
+                                                                    $img = htmlspecialchars($anime['image_url']);
+                                                                    $status = htmlspecialchars($anime['status']);
+                                                                ?>
+                                                                        <li>
+
+                                                                                <div class="img">
+                                                                                        <a href="<?=$link?>" title="<?=$title?>">
+                                                                                                <img src="<?=$img?>" alt="<?=$title?>" />
+                                                                                        </a>
+                                                                                </div>
+                                                                                <p class="name"><a href="<?=$link?>" title="<?=$title?>"><?=$title?></a>
+                                                                                </p>
+                                                                                <p class="released"><?=$status?></p>
+                                                                        </li>
+                                                                <?php } ?>
+                                                                </ul>
                                                         </div>
                                                 </div>
 
                                         </section>
                                         <section class="content_right">
+                                        
 
                                                 <div class="clr"></div>
                                                 <div class="main_body">
@@ -178,7 +231,7 @@
                                                         window.onload = abcd;
                                                         window.onscroll = scrollFunction;
                                                 </script>
-                                                <?php require_once('../app/views/partials/sub-category.html'); ?>
+                                                <?php require_once('../app/views/partials/sub-category.html');?>
                                         </section>
                                 </section>
                                 <div class="clr"></div>
@@ -214,6 +267,7 @@
                         $('#scrollbar2').tinyscrollbar();
                 }
         </script>
+
 </body>
 
 </html>
