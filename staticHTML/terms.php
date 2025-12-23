@@ -1,4 +1,18 @@
-<?php require_once('../app/config/info.php'); ?>
+<?php
+/**
+ * Terms of Service Page
+ *
+ * This file renders the Terms of Service page, outlining the legal agreement
+ * between the user and the website.
+ *
+ * @package    GogoAnime Clone
+ * @subpackage StaticHTML
+ * @author     GogoAnime Clone Contributors
+ * @license    MIT License
+ */
+
+require_once('../app/config/info.php');
+?>
 <!DOCTYPE html>
 <html lang="en-US">
 
@@ -28,7 +42,7 @@
 
     <script type="text/javascript" src="<?=$base_url?>/assets/js/libraries/jquery.js"></script>
     <script>
-        var base_url = 'https://' + document.domain + '/';
+        var base_url = '<?=$base_url?>/';
     </script>
 </head>
 

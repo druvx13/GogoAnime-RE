@@ -1,4 +1,17 @@
-<?php require_once('../app/config/info.php'); ?>
+<?php
+/**
+ * About Us Page
+ *
+ * This file renders the "About Us" page, providing legal and operational information
+ * about the website. It includes the standard header and footer.
+ *
+ * @package    GogoAnime Clone
+ * @subpackage StaticHTML
+ * @author     GogoAnime Clone Contributors
+ * @license    MIT License
+ */
+require_once('../app/config/info.php');
+?>
 <!DOCTYPE html>
 <html lang="en-US">
 

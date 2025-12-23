@@ -1,5 +1,20 @@
-<?php require_once('./app/config/info.php'); ?>
+<?php
+/**
+ * Landing Page
+ *
+ * This is the entry point of the website (`/`). It serves as a landing page
+ * providing a brief introduction, legal disclaimers, and a link to the main home page.
+ *
+ * @package    GogoAnime Clone
+ * @subpackage Root
+ * @author     GogoAnime Clone Contributors
+ * @license    MIT License
+ */
+
+require_once('./app/config/info.php');
+?>
 <!DOCTYPE html>
+<html lang="en">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
@@ -33,13 +48,11 @@
     <link rel="canonical" href="<?=$base_url?>" />
     <link rel="alternate" hreflang="en-us" href="<?=$base_url?>" />
 
-
-
     <link rel="stylesheet" type="text/css" href="<?=$base_url?>/assets/css/style.css" />
 
     <script type="text/javascript" src="<?=$base_url?>/assets/js/libraries/jquery.js"></script>
     <script>
-        var base_url = 'http://' + document.domain + '/';
+        var base_url = '<?=$base_url?>/';
         var base_url_cdn_api = 'https://ajax.gogocdn.net/';
         var api_anclytic = 'https://ajax.gogocdn.net/anclytic-ajax.html';
     </script>
@@ -108,14 +121,9 @@
         <form style="max-width:600px;margin:0 auto;position:relative;text-align:left;" onsubmit="" id="search-form" action="<?=$base_url?>/search" method="get">
           <div class="row">
             <input placeholder="search" name="keyword" id="keyword" type="text" value="" autocomplete="off">            
-            <input class="btngui" value="" type="button" name="" onclick="do_search();">
-            <input id="key_pres" name="key_pres" value="" type="hidden" />
-            <input id="link_alias" name="link_alias" value="" type="hidden" />
-            <input id="keyword_search_replace" name="keyword_search_replace" value="" type="hidden" />
+            <input class="btngui" value="" type="submit" name="">
           </div>
           <div class="hide_search hide"><i class="icongec-muiten"></i></div>
-          <div id="header_search_autocomplete"></div>
-          <div class="loader"></div>
         </form>           
         <div class="clr"></div>
         <div class="search-iph"><a href="javascript:void(0)"><i class="icongec-search-mb"></i></a></div>

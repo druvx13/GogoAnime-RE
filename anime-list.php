@@ -1,8 +1,20 @@
 <?php
+/**
+ * Anime List Page
+ *
+ * This page displays a comprehensive, alphabetical list of all anime.
+ * It provides pagination and A-Z filtering.
+ *
+ * @package    GogoAnime Clone
+ * @subpackage Root
+ * @author     GogoAnime Clone Contributors
+ * @license    MIT License
+ */
+
 require_once('./app/config/info.php');
 require_once('./app/config/db.php');
 
-// --- NEW SEARCH LOGIC ---
+// --- SEARCH LOGIC ---
 $searchQuery = isset($_GET['keyword']) ? trim($_GET['keyword']) : '';
 $searchResults = [];
 $hasSearched = false;
@@ -15,13 +27,12 @@ if ($searchQuery !== '') {
     $searchStmt->execute();
     $searchResults = $searchStmt->fetchAll(PDO::FETCH_ASSOC);
 }
-// --- END NEW SEARCH LOGIC ---
+// --- END SEARCH LOGIC ---
 
-// --- ORIGINAL PAGINATION LOGIC (ADAPTED FOR SEARCH) ---
+// --- PAGINATION LOGIC (Only runs if not searching) ---
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $char = isset($_GET['char']) ? $_GET['char'] : 'All';
 
-// Only run original pagination logic if not searching
 if (!$hasSearched) {
     $limit = 50;
     $offset = ($page - 1) * $limit;
@@ -42,10 +53,10 @@ if (!$hasSearched) {
     $stmt->execute();
     $animeList = $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
-// --- END ORIGINAL LOGIC ---
+// --- END PAGINATION LOGIC ---
 ?>
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
@@ -74,7 +85,7 @@ if (!$hasSearched) {
     <script type="text/javascript" src="<?=$base_url?>/assets/js/libraries/jquery.js"></script>
     <?php require_once('./app/views/partials/advertisements/popup.html'); ?>
     <script>
-        var base_url = 'https://' . document.domain . '/';
+        var base_url = '<?=$base_url?>/';
         var base_url_cdn_api = 'https://ajax.gogocdn.net/';
         var api_anclytic = 'https://ajax.gogocdn.net/anclytic-ajax.html';
     </script>
@@ -94,26 +105,33 @@ if (!$hasSearched) {
                             <!-- Updated Header based on search -->
                             <div class="anime_name anime_list">
                                 <i class="icongec-anime_list i_pos"></i>
-                                <h2><?php if ($hasSearched) { echo "Search Results for '$searchQuery'"; } else { echo "ANIME LIST"; } ?></h2>
+                                <h2><?php if ($hasSearched) { echo "Search Results for '" . htmlspecialchars($searchQuery) . "'"; } else { echo "ANIME LIST"; } ?></h2>
+
                                 <!-- Pagination container only shows if not searching -->
                                 <?php if (!$hasSearched): ?>
                                 <div class="anime_name_pagination">
                                     <div class="pagination">
                                         <ul class='pagination-list'>
                                             <?php
-                                            $countStmt = $conn->prepare("SELECT COUNT(*) FROM anime WHERE $whereClause");
-                                            foreach ($params as $k => $v) {
-                                                $countStmt->bindValue($k, $v);
-                                            }
-                                            $countStmt->execute();
-                                            $total = $countStmt->fetchColumn();
+                                            try {
+                                                $countStmt = $conn->prepare("SELECT COUNT(*) FROM anime WHERE $whereClause");
+                                                foreach ($params as $k => $v) {
+                                                    $countStmt->bindValue($k, $v);
+                                                }
+                                                $countStmt->execute();
+                                                $total = $countStmt->fetchColumn();
 
-                                            $totalPages = ceil($total / $limit);
+                                                $totalPages = ceil($total / $limit);
 
-                                            for ($i = 1; $i <= $totalPages; $i++) {
-                                                 if ($i > 10 && $i != $totalPages && $i != $page) continue;
-                                                 $active = ($i == $page) ? 'selected' : '';
-                                                 echo "<li class='$active'><a href='?char=$char&page=$i'>$i</a></li>";
+                                                for ($i = 1; $i <= $totalPages; $i++) {
+                                                     // Basic pagination logic: show first 10, last, and current
+                                                     if ($i > 10 && $i != $totalPages && $i != $page) continue;
+                                                     $active = ($i == $page) ? 'selected' : '';
+                                                     $safeChar = htmlspecialchars($char);
+                                                     echo "<li class='$active'><a href='?char=$safeChar&page=$i'>$i</a></li>";
+                                                }
+                                            } catch (PDOException $e) {
+                                                error_log("Pagination Error: " . $e->getMessage());
                                             }
                                             ?>
                                         </ul>
@@ -129,9 +147,9 @@ if (!$hasSearched) {
                                     <li class="first-char">
                                         <a href="?char=All" class="<?= (!isset($_GET['char']) || $_GET['char'] == 'All') ? 'active' : '' ?>" rel="all">All</a>
                                     </li>
-                                    <?php foreach (range('A', 'Z') as $char) { ?>
+                                    <?php foreach (range('A', 'Z') as $c) { ?>
                                         <li class="first-char">
-                                            <a href="?char=<?=$char?>" class="<?= (isset($_GET['char']) && $_GET['char'] == $char) ? 'active' : '' ?>" rel=""><?=$char?></a>
+                                            <a href="?char=<?=$c?>" class="<?= (isset($_GET['char']) && $_GET['char'] == $c) ? 'active' : '' ?>" rel=""><?=$c?></a>
                                         </li>
                                     <?php } ?>
                                 </ul>
@@ -151,14 +169,18 @@ if (!$hasSearched) {
                                         }
                                         // Show message if no results found
                                         if (empty($searchResults)) {
-                                            echo "<p>No anime found matching '$searchQuery'.</p>";
+                                            echo "<p>No anime found matching '" . htmlspecialchars($searchQuery) . "'.</p>";
                                         }
                                     } else {
                                         // Display original paginated list
-                                        foreach($animeList as $anime) {
-                                            $link = "/anime-details.php?id=" . $anime['id'];
-                                            $title = htmlspecialchars($anime['title']);
-                                            echo "<li title='$title'><a href='$link'>$title</a></li>";
+                                        if (isset($animeList) && !empty($animeList)) {
+                                            foreach($animeList as $anime) {
+                                                $link = "/anime-details.php?id=" . $anime['id'];
+                                                $title = htmlspecialchars($anime['title']);
+                                                echo "<li title='$title'><a href='$link'>$title</a></li>";
+                                            }
+                                        } else {
+                                            echo "<li>No anime found.</li>";
                                         }
                                     }
                                     ?>
@@ -255,33 +277,16 @@ if (!$hasSearched) {
                     </section>
                 </section>
                 <div class="clr"></div>
-                <footer>
-                    <div class="menu_bottom">
-                        <a href="/about-us.html">
-                            <h3>Abouts us</h3>
-                        </a>
-                        <a href="/contact-us.html">
-                            <h3>Contact us</h3>
-                        </a>
-                        <a href="/privacy.html">
-                            <h3>Privacy</h3>
-                        </a>
-                    </div>
-                    <div class="croll">
-                        <div class="big"><i class="icongec-backtop"></i></div>
-                        <div class="small"><i class="icongec-backtop_mb"></i></div>
-                    </div>
-                </footer>
+                <?php include('./app/views/partials/footer.php')?>
             </div>
         </div>
     </div>
     <div id="off_light"></div>
     <div class="clr"></div>
     <div class="mask"></div>
-        <script type="text/javascript" src="<?=$base_url?>/assets/js/files/combo.js"></script>
+    <script type="text/javascript" src="<?=$base_url?>/assets/js/files/combo.js"></script>
     <script type="text/javascript" src="<?=$base_url?>/assets/js/files/video.js"></script>
     <script type="text/javascript" src="<?=$base_url?>/assets/js/files/jquery.tinyscrollbar.min.js"></script>
-    <?php include('./app/views/partials/footer.php')?> 
 
     <script type="text/javascript" src="<?=$base_url?>/assets/js/files/jqueryTooltip.js"></script>
     <script type="text/javascript">
@@ -324,5 +329,4 @@ if (!$hasSearched) {
         }
     </script>
 </body>
-
 </html>

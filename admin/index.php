@@ -1,12 +1,31 @@
 <?php
+/**
+ * Admin Dashboard
+ *
+ * This is the landing page for the administrative backend.
+ * It displays key statistics about the platform, including total counts for
+ * anime, episodes, and registered users.
+ *
+ * @package    GogoAnime Clone
+ * @subpackage Admin
+ * @author     GogoAnime Clone Contributors
+ * @license    MIT License
+ */
+
 require_once 'auth.php';
 require_once '../app/config/db.php';
 require_once 'layout/header.php';
 
-// Fetch stats
-$animeCount = $conn->query("SELECT COUNT(*) FROM anime")->fetchColumn();
-$episodeCount = $conn->query("SELECT COUNT(*) FROM episodes")->fetchColumn();
-$userCount = $conn->query("SELECT COUNT(*) FROM users")->fetchColumn();
+// Fetch system statistics
+try {
+    $animeCount = $conn->query("SELECT COUNT(*) FROM anime")->fetchColumn();
+    $episodeCount = $conn->query("SELECT COUNT(*) FROM episodes")->fetchColumn();
+    $userCount = $conn->query("SELECT COUNT(*) FROM users")->fetchColumn();
+} catch (PDOException $e) {
+    // Handle database errors gracefully on dashboard
+    $animeCount = $episodeCount = $userCount = "Error";
+    error_log("Dashboard stats error: " . $e->getMessage());
+}
 ?>
 
 <h2>Dashboard</h2>

@@ -1,24 +1,41 @@
 <?php
+/**
+ * Contact Us Page
+ *
+ * This file handles the contact form submission and renders the contact page.
+ * It inserts user messages into the database and displays a status message.
+ *
+ * @package    GogoAnime Clone
+ * @subpackage StaticHTML
+ * @author     GogoAnime Clone Contributors
+ * @license    MIT License
+ */
+
 // Fix include paths for router/root execution
 $root = dirname(__DIR__); 
 require_once($root . '/app/config/info.php');
 require_once($root . '/app/config/db.php');
 
 $msg = '';
+
+// Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $name = $_POST['name'];
-    $email = $_POST['email'];
-    $subject = $_POST['subject'];
-    $message = $_POST['message'];
+    $name = $_POST['name'] ?? '';
+    $email = $_POST['email'] ?? '';
+    $subject = $_POST['subject'] ?? '';
+    $message = $_POST['message'] ?? '';
 
     // Basic validation
     if (!empty($name) && !empty($email) && !empty($message)) {
         // Disclaimer: No guarantee of response
         try {
+            // Prepare statement to prevent SQL injection
             $stmt = $conn->prepare("INSERT INTO contacts (name, email, subject, message) VALUES (:name, :email, :subject, :message)");
             $stmt->execute(['name' => $name, 'email' => $email, 'subject' => $subject, 'message' => $message]);
             $msg = "<div style='color:green; margin-bottom:10px;'>Message transmitted. This does not constitute an acknowledgement of receipt.</div>";
         } catch (Exception $e) {
+             // Log error silently and show generic message
+             error_log("Contact form error: " . $e->getMessage());
              $msg = "<div style='color:red; margin-bottom:10px;'>Transmission failed.</div>";
         }
     } else {

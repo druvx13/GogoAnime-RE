@@ -1,13 +1,25 @@
+<?php
+/**
+ * Recent Releases Partial
+ *
+ * This partial renders the list of recently released anime episodes.
+ * It queries the database for the latest episodes and displays them as a list with thumbnails.
+ *
+ * @package    GogoAnime Clone
+ * @subpackage Views/Partials
+ * @author     GogoAnime Clone Contributors
+ * @license    MIT License
+ */
+?>
                         <nav class="menu_recent">
                           <ul>
                           <?php
-                            // [GAP-001] Native MySQL Implementation
-                            // Query recent episodes joined with anime info
-                            // Assuming $conn is available from the parent include (home.php etc usually include db.php)
+                            // Ensure database connection is available
                             if (!isset($conn)) {
                                 require_once(__DIR__ . '/../../config/db.php');
                             }
 
+                            // Query recent episodes joined with anime info
                             $stmt = $conn->prepare("
                                 SELECT e.id, e.episode_number, a.title, a.image_url
                                 FROM episodes e
