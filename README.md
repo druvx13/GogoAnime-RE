@@ -1,6 +1,6 @@
 ![GogoAnime Clone Logo](logos/(HIGH-RES)GogoAnime-RE.png)
 
-# GogoAnime Clone System
+# GogoAnime Clone System 
 
 **OFFICIAL REPOSITORY DOCUMENTATION**
 
