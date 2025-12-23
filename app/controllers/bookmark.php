@@ -12,7 +12,7 @@
  */
 
 session_start();
-require_once('../app/config/db.php');
+require_once('../config/db.php');
 
 // Set response type to JSON
 header('Content-Type: application/json');
