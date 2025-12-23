@@ -10,38 +10,28 @@
         <title><?=$website_name?> | About Us</title>
 
         <meta name="robots" content="index, follow" />
-        <meta name="description" content="Watch anime online in English. You can watch free series and movies online and English subtitle.">
-        <meta name="keywords" content="gogoanime,watch anime, anime online, free anime, english anime, sites to watch anime">
+        <meta name="description" content="Legal and operational information about <?=$website_name?>.">
+        <meta name="keywords" content="about us, legal, disclaimer, <?=$website_name?>">
         <meta itemprop="image" content="<?=$base_url?>/assets/img/logo.png" />
 
-        <meta property="og:site_name" content="Gogoanime" />
+        <meta property="og:site_name" content="<?=$website_name?>" />
         <meta property="og:locale" content="en_US" />
         <meta property="og:type" content="website" />
         <meta property="og:title" content="<?=$website_name?> | About Us" />
-        <meta property="og:description" content="Watch anime online in English. You can watch free series and movies online and English subtitle.">
+        <meta property="og:description" content="Legal and operational information about <?=$website_name?>.">
         <meta property="og:url" content="" />
         <meta property="og:image" content="<?=$base_url?>/assets/img/logo.png" />
         <meta property="og:image:secure_url" content="<?=$base_url?>/assets/img/logo.png" />
 
         <meta property="twitter:card" content="summary" />
         <meta property="twitter:title" content="<?=$website_name?> | About Us" />
-        <meta property="twitter:description" content="Watch anime online in English. You can watch free series and movies online and English subtitle." />
+        <meta property="twitter:description" content="Legal and operational information about <?=$website_name?>." />
 
         <link rel="canonical" href="<?=$base_url?><?php echo $_SERVER['REQUEST_URI'] ?>" />
         <link rel="alternate" hreflang="en-us" href="<?=$base_url?><?php echo $_SERVER['REQUEST_URI'] ?>" />
 
-
-
         <link rel="stylesheet" type="text/css" href="<?=$base_url?>/assets/css/style.css" />
-
-        <?php require_once('../app/views/partials/advertisements/popup.html'); ?>
-
         <script type="text/javascript" src="<?=$base_url?>/assets/js/libraries/jquery.js"></script>
-        <script>
-                var base_url = 'https://' + document.domain + '/';
-                var base_url_cdn_api = 'https://ajax.gogocdn.net/';
-                var api_anclytic = 'https://ajax.gogocdn.net/anclytic-ajax.html';
-        </script>
         <script type="text/javascript" src="https://cdn.gogocdn.net/files/gogo/js/main.js?v=6.9"></script>
 </head>
 
@@ -52,136 +42,57 @@
                         <div id="wrapper_bg">
                            <?php require('../app/views/partials/header.php'); ?>
                                 <section class="content">
-                                        <section class="content_left">
+                                        <section class="content_left" style="width: 100%;">
 
                                                 <div class="main_body">
                                                         <div class="anime_name ongoing">
                                                                 <div class="anime_name_img_ongoing"></div>
-                                                                <h2>About us</h2>
+                                                                <h2>About Us</h2>
+                                                        </div>
+                                                        <div class="p_content" style="padding: 20px; line-height: 1.6; color: #aaa;">
+                                                            <p style="margin-bottom: 15px;">
+                                                                <strong><?=$website_name?></strong> operates as a specialized content indexing and discovery platform.
+                                                                Our mission is to provide an efficient, organized, and user-friendly interface for locating publicly available anime content across the web.
+                                                            </p>
+
+                                                            <h3 style="color: #ffc119; margin-top: 20px; margin-bottom: 10px; font-size: 16px;">Operational Model</h3>
+                                                            <p style="margin-bottom: 15px;">
+                                                                We function strictly as a search engine and directory.
+                                                                <strong><?=$website_name?> does not host, upload, or store any video files on its servers.</strong>
+                                                                All content displayed is provided by non-affiliated third parties.
+                                                                Our system automatically crawls and indexes content found on public domains, similar to how major search engines operate.
+                                                            </p>
+
+                                                            <h3 style="color: #ffc119; margin-top: 20px; margin-bottom: 10px; font-size: 16px;">Commitment to Rights</h3>
+                                                            <p style="margin-bottom: 15px;">
+                                                                We respect the intellectual property rights of others and expect our users to do the same.
+                                                                While we do not control the underlying content, we are committed to maintaining a compliant platform.
+                                                                Rights holders who believe their content has been improperly indexed may contact us for removal in accordance with our copyright policies.
+                                                            </p>
+
+                                                            <h3 style="color: #ffc119; margin-top: 20px; margin-bottom: 10px; font-size: 16px;">User Privacy & Security</h3>
+                                                            <p style="margin-bottom: 15px;">
+                                                                We prioritize user privacy by minimizing data collection and ensuring transparency in our operations.
+                                                                Our platform is designed to be used without requiring extensive personal information.
+                                                                Please review our <a href="/privacy.html" style="color: #ffc119;">Privacy Policy</a> and <a href="/terms.html" style="color: #ffc119;">Terms of Service</a> to understand your rights and obligations while using this service.
+                                                            </p>
+
+                                                            <p style="margin-top: 30px; font-size: 13px; color: #888; border-top: 1px solid #333; padding-top: 10px;">
+                                                                For official inquiries, please refer to our <a href="/contact-us.html" style="color: #888;">Contact page</a>.
+                                                            </p>
                                                         </div>
                                                 </div>
 
-                                        </section>
-                                        <section class="content_right">
-
-                                                <div class="clr"></div>
-                                                <div class="main_body">
-                                                        <div class="main_body_black">
-                                                                <div class="anime_name ongoing">
-                                                                        <i class="icongec-ongoing i_pos"></i>
-                                                                        <h2>RECENT RELEASE</h2>
-                                                                </div>
-                                                                <div class="recent">
-                                                                        <!-- begon -->
-                                                                        <div id="scrollbar2">
-                                                                                <div class="scrollbar">
-                                                                                        <div class="track">
-                                                                                                <div class="thumb">
-                                                                                                        <div
-                                                                                                                class="end">
-                                                                                                        </div>
-                                                                                                </div>
-                                                                                        </div>
-                                                                                </div>
-                                                                                <div class="viewport">
-                                                                                        <div class="overview">
-                                                                                                <?php require_once('../app/views/partials/recentRelease.php'); ?>
-                                                                                        </div>
-                                                                                </div>
-                                                                        </div>
-                                                                        <!-- tao thanh cuon 1-->
-                                                                </div>
-                                                        </div>
-                                                </div>
-                                                <div class="clr"></div>
-                                                <div id="load_ads_2">
-                                                        <div id="media.net sticky ad" style="display: inline-block">
-                                                        </div>
-                                                </div>
-                                                <style type="text/css">
-                                                        #load_ads_2 {
-                                                                width: 300px;
-                                                        }
-
-                                                        #load_ads_2.sticky {
-                                                                position: fixed;
-                                                                top: 0;
-                                                        }
-
-                                                        #scrollbar2 .viewport {
-                                                                height: 1000px !important;
-                                                        }
-                                                </style>
-                                                <script>
-                                                        var leftamt;
-                                                        function scrollFunction() {
-                                                                var scamt = (document.documentElement.scrollTop ? document.documentElement.scrollTop : document.body.scrollTop);
-                                                                var element = document.getElementById("media.net sticky ad");
-                                                                if (scamt > leftamt) {
-                                                                        var leftPosition = element.getBoundingClientRect().left;
-                                                                        element.className = element.className.replace(/(?:^|\s)fixclass(?!\S)/g, '');
-                                                                        element.className += " fixclass";
-                                                                        element.style.left = leftPosition + 'px';
-                                                                }
-                                                                else {
-                                                                        element.className = element.className.replace(/(?:^|\s)fixclass(?!\S)/g, '');
-                                                                }
-                                                        }
-                                                        function getElementTopLeft(id) {
-                                                                var ele = document.getElementById(id);
-                                                                var top = 0;
-                                                                var left = 0;
-                                                                while (ele.tagName != "BODY") {
-                                                                        top += ele.offsetTop;
-                                                                        left += ele.offsetLeft;
-                                                                        ele = ele.offsetParent;
-                                                                }
-                                                                return { top: top, left: left };
-                                                        }
-                                                        function abcd() {
-                                                                TopLeft = getElementTopLeft("media.net sticky ad");
-                                                                leftamt = TopLeft.top;
-                                                                //leftamt -= 10;
-                                                        }
-                                                        window.onload = abcd;
-                                                        window.onscroll = scrollFunction;
-                                                </script>
-                                                <?php require_once('../app/views/partials/sub-category.html'); ?>
                                         </section>
                                 </section>
                                 <div class="clr"></div>
-                                <footer>
-                                        <div class="menu_bottom">
-                                                <a href="/about-us.html">
-                                                        <h3>Abouts us</h3>
-                                                </a>
-                                                <a href="/contact-us.html">
-                                                        <h3>Contact us</h3>
-                                                </a>
-                                                <a href="/privacy.html">
-                                                        <h3>Privacy</h3>
-                                                </a>
-                                        </div>
-                                        <div class="croll">
-                                                <div class="big"><i class="icongec-backtop"></i></div>
-                                                <div class="small"><i class="icongec-backtop_mb"></i></div>
-                                        </div>
-                                </footer>
+                                <?php include('../app/views/partials/footer.php')?>
                         </div>
                 </div>
         </div>
         <div id="off_light"></div>
         <div class="clr"></div>
         <div class="mask"></div>
-        <script type="text/javascript" src="<?=$base_url?>/assets/js/files/combo.js"></script>
-    <script type="text/javascript" src="<?=$base_url?>/assets/js/files/video.js"></script>
-        <script type="text/javascript" src="<?=$base_url?>/assets/js/files/jquery.tinyscrollbar.min.js"></script>
-        <?php include('../app/views/partials/footer.php')?>
-        <script>
-                if (document.getElementById('scrollbar2')) {
-                        $('#scrollbar2').tinyscrollbar();
-                }
-        </script>
 </body>
 
 </html>

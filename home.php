@@ -373,26 +373,7 @@ if ($searchQuery !== '') {
                 </section>
                 <?php endif; ?>
                 <div class="clr"></div>
-                <footer>
-                    <div class="menu_bottom">
-                        <a href="/about-us.html">
-                            <h3>About Us</h3>
-                        </a>
-                        <a href="/contact-us.html">
-                            <h3>Contact Us</h3>
-                        </a>
-                        <a href="/privacy.html">
-                            <h3>Privacy</h3>
-                        </a>
-                        <a href="/terms.html">
-                            <h3>Terms of Service</h3>
-                        </a>
-                    </div>
-                    <div class="croll">
-                        <div class="big"><i class="icongec-backtop"></i></div>
-                        <div class="small"><i class="icongec-backtop_mb"></i></div>
-                    </div>
-                </footer>
+                <?php require_once('./app/views/partials/footer.php'); ?>
             </div>
         </div>
     </div>

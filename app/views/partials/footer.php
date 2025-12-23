@@ -18,9 +18,14 @@ $(document).ready(function () {
 <div style="text-align:center; padding:10px; color:#ccc; font-size:12px;">
   <p>&copy; <?=date("Y")?> <?=$website_name?>. All rights reserved.</p>
   <p>
+    <a href="/about-us.html" style="color:#888;">About Us</a> |
     <a href="/terms.html" style="color:#888;">Terms of Service</a> |
     <a href="/privacy.html" style="color:#888;">Privacy Policy</a> |
     <a href="/contact-us.html" style="color:#888;">Contact</a>
   </p>
   <p>Disclaimer: This site does not store any files on its server. All contents are provided by non-affiliated third parties.</p>
+</div>
+<div class="croll">
+  <div class="big"><i class="icongec-backtop"></i></div>
+  <div class="small"><i class="icongec-backtop_mb"></i></div>
 </div>
