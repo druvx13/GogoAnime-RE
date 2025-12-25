@@ -140,7 +140,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['email']) && isset($_PO
                                 ?>
                                 <?php if ($google_enabled): ?>
                                 <a href="<?=$google_login_url?>" class="btn-google">
-                                    <span><img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="google" style="width: 20px; height: 20px;" /></span>
+                                    <span><img src="../assets/img/google.png" alt="google" style="width: 20px; height: 20px;" /></span>
                                     Log in with Google
                                 </a>
                                 <?php else: ?>
