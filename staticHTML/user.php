@@ -78,7 +78,7 @@ $bookmarks = $bmStmt->fetchAll(PDO::FETCH_ASSOC);
         var base_url_cdn_api = 'https://ajax.gogocdn.net/';
         var api_anclytic = 'https://ajax.gogocdn.net/anclytic-ajax.html';
     </script>
-    <script type="text/javascript" src="https://cdn.gogocdn.net/files/gogo/js/main.js?v=6.9"></script>
+    <script type="text/javascript" src="<?=$base_url?>/assets/js/main.js"></script>
     <style>
         .message { text-align: center; padding: 10px; margin-bottom: 15px; }
         .error { color: red; background: #ffe6e6; }

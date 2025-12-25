@@ -35,7 +35,7 @@
         var base_url_cdn_api = 'https://ajax.gogo-load.com/';
         var api_anclytic = 'https://ajax.gogo-load.com/anclytic-ajax.html';
     </script>
-    <script type="text/javascript" src="https://cdn.gogocdn.net/files/gogo/js/main.js"></script>
+    <script type="text/javascript" src="<?=$base_url?>/assets/js/main.js"></script>
 </head>
 <body>
 <div class="clr"></div>

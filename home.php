@@ -58,7 +58,7 @@ if ($searchQuery !== '') {
         var base_url_cdn_api = 'https://ajax.gogocdn.net/';
         var api_anclytic = 'https://ajax.gogocdn.net/anclytic-ajax.html';
     </script>
-    <script type="text/javascript" src="https://cdn.gogocdn.net/files/gogo/js/main.js?v=6.9"></script>
+    <script type="text/javascript" src="<?=$base_url?>/assets/js/main.js"></script>
 
     <?php require_once('./app/views/partials/advertisements/popup.html'); ?>
     
@@ -136,7 +136,7 @@ if ($searchQuery !== '') {
                                                 // Pagination Logic
                                                 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
                                                 if ($page < 1) $page = 1;
-                                                $limit = 20;
+                                                $limit = 10;
                                                 $offset = ($page - 1) * $limit;
 
                                                 // Count total recent releases (episodes)
@@ -399,7 +399,7 @@ $(document).ready(function () {
     .btn-notice {bottom: 52px;}
   }
 </style>
-<div class="bg-notice" style="position:fixed;z-index:9999;background:#ffc119;bottom:0;text-align:center;color:#000;width:100%;padding:10px 0;font-weight:600;">We moved site to <a href="<?=$base_url?>" title="<?=$base_url?>" alt="Gogoanime"><?=$base_url?></a>. Please bookmark new site. Thank you!</div><div class="btn-notice" style="position:fixed;z-index:9999;background:#00a651;color:#fff;cursor:pointer;right:0;padding:3px 8px;">x</div>
+<!---<div class="bg-notice" style="position:fixed;z-index:9999;background:#ffc119;bottom:0;text-align:center;color:#000;width:100%;padding:10px 0;font-weight:600;">We moved site to <a href="<?=$base_url?>" title="<?=$base_url?>" alt="Gogoanime"><?=$base_url?></a>. Please bookmark new site. Thank you!</div><div class="btn-notice" style="position:fixed;z-index:9999;background:#00a651;color:#fff;cursor:pointer;right:0;padding:3px 8px;">x</div>--->
     <script>
         LoadFilmOngoing(1);
     </script>

@@ -25,7 +25,7 @@ $(document).ready(function () {
   </p>
   <p>Disclaimer: This site does not store any files on its server. All contents are provided by non-affiliated third parties.</p>
 </div>
-<div class="croll">
+<!---<div class="croll">
   <div class="big"><i class="icongec-backtop"></i></div>
   <div class="small"><i class="icongec-backtop_mb"></i></div>
-</div>
+</div>--->

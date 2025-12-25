@@ -32,7 +32,7 @@
 
         <link rel="stylesheet" type="text/css" href="<?=$base_url?>/assets/css/style.css" />
         <script type="text/javascript" src="<?=$base_url?>/assets/js/libraries/jquery.js"></script>
-        <script type="text/javascript" src="https://cdn.gogocdn.net/files/gogo/js/main.js?v=6.9"></script>
+        <script type="text/javascript" src="<?=$base_url?>/assets/js/main.js"></script>
 </head>
 
 <body>

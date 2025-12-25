@@ -91,7 +91,7 @@ $animeList = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 var api_anclytic = 'https://ajax.gogocdn.net/anclytic-ajax.html';
         </script>
         <?php require_once('../app/views/partials/advertisements/popup.html'); ?>
-        <script type="text/javascript" src="https://cdn.gogocdn.net/files/gogo/js/main.js?v=7.1"></script>
+        <script type="text/javascript" src="<?=$base_url?>/assets/js/main.js"></script>
 </head>
 
 <body>
