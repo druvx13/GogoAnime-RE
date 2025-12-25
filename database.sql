@@ -436,6 +436,12 @@ INSERT INTO `types` (`name`, `value`) VALUES ('ONA', '4');
 INSERT INTO `types` (`name`, `value`) VALUES ('Special', '5');
 INSERT INTO `types` (`name`, `value`) VALUES ('Music', '6');
 
+INSERT INTO `video_providers` (`name`, `label`, `is_active`) VALUES
+('Gogo Server', 'Vidstreaming', 1),
+('Vidcloud', 'Vidcloud', 1),
+('DoodStream', 'DoodStream', 1),
+('Mp4Upload', 'Mp4Upload', 1);
+
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
