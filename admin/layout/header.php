@@ -26,6 +26,7 @@
         <a href="/admin/type_list.php"><i class="fas fa-list"></i> Types</a>
         <a href="/admin/users.php"><i class="fas fa-users"></i> Users</a>
         <!-- Comments handled by Disqus -->
+        <a href="/admin/request_list.php"><i class="fas fa-clipboard-list"></i> Requests</a>
         <a href="/admin/messages.php"><i class="fas fa-envelope"></i> Messages</a>
         <a href="/admin/logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>

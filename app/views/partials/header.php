@@ -37,7 +37,7 @@ if (session_status() === PHP_SESSION_NONE) {
             <a class="btn telegram hidden-phone" style="margin-right:5px;" href="https://t.me/joinchat/W4lYQ-RGOQ05MmI9" target="_blank" data-url=""></a>
         </div>
         <div class="submenu_intro">
-            <a href="https://gogotaku.info/login.html" target="_blank">Request</a>
+            <a href="<?= htmlspecialchars($base_url ?? '', ENT_QUOTES, 'UTF-8'); ?>/requests">Request</a>
             <span>|</span>
             <a href="<?= htmlspecialchars($base_url ?? '', ENT_QUOTES, 'UTF-8'); ?>/contact-us.html">Contact us</a>
             <span>|</span>
@@ -64,6 +64,9 @@ if (session_status() === PHP_SESSION_NONE) {
                     <li class="seri"><a href="<?= htmlspecialchars($base_url ?? '', ENT_QUOTES, 'UTF-8'); ?>/new-season" title="New season" class="series ads-evt">New season</a></li>
                     <li class="movies"><a href="<?= htmlspecialchars($base_url ?? '', ENT_QUOTES, 'UTF-8'); ?>/anime-movies" title="Movies" class="movie ads-evt">Movies</a></li>
                     <li class="movies"><a href="<?= htmlspecialchars($base_url ?? '', ENT_QUOTES, 'UTF-8'); ?>/popular" title="Popular" class="popular ads-evt">Popular</a></li>
+                    <li class="movies show_mobis">
+                        <a href="<?= htmlspecialchars($base_url ?? '', ENT_QUOTES, 'UTF-8'); ?>/requests" title="Request" class="popular online">Request</a>
+                    </li>
 
                     <?php if (isset($_SESSION['user_id'])): ?>
                         <li class="show-mobile"><a href="/user.html">Profile</a></li>
@@ -73,7 +76,38 @@ if (session_status() === PHP_SESSION_NONE) {
                         <li class="show-mobile"><a href="/register.html">Sign up</a></li>
                     <?php endif; ?>
 
-                    <li class="movie genre hide"></li>
+                    <li class="movie genre hide">
+                        <a href="javascript:void(0)" class="genre">Genre</a>
+                        <ul>
+                            <?php
+                            // Determine the path to db.php.
+                            // If this header is included from a file in root (most cases), __DIR__ is app/views/partials
+                            // So we need to go up to app/config/db.php
+                            $dbPath = __DIR__ . '/../../config/db.php';
+                            if (file_exists($dbPath)) {
+                                require_once $dbPath;
+                            } else {
+                                // Fallback: try finding it relative to where the script is executed if needed, or assume it's already included
+                                // But usually require_once is safe if already included.
+                            }
+
+                            if (isset($conn)) {
+                                try {
+                                    $genreStmt = $conn->query("SELECT name, slug FROM genres ORDER BY name ASC");
+                                    $genres = $genreStmt->fetchAll(PDO::FETCH_ASSOC);
+                                    foreach ($genres as $genre) {
+                                        echo '<li class="">';
+                                        echo '<a href="' . htmlspecialchars($base_url ?? '', ENT_QUOTES, 'UTF-8') . '/genre/' . htmlspecialchars($genre['slug'], ENT_QUOTES, 'UTF-8') . '" title="' . htmlspecialchars($genre['name'], ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($genre['name'], ENT_QUOTES, 'UTF-8') . '</a>';
+                                        echo '</li>';
+                                    }
+                                } catch (PDOException $e) {
+                                    // Silently fail or log error
+                                    error_log("Error fetching genres: " . $e->getMessage());
+                                }
+                            }
+                            ?>
+                        </ul>
+                    </li>
                 </ul>
             </nav>
         </div>
