@@ -173,7 +173,7 @@ try {
     <title>Search Result - <?=$website_name?></title>
     <link rel="stylesheet" type="text/css" href="<?=$base_url?>/assets/css/style.css" />
     <script type="text/javascript" src="<?=$base_url?>/assets/js/libraries/jquery.js"></script>
-    <script type="text/javascript" src="https://cdn.gogocdn.net/files/gogo/js/main.js"></script>
+    <script type="text/javascript" src="<?=$base_url?>/assets/js/main.js"></script>
     <style>
         .filters .dropdown-toggle { cursor: pointer; }
     </style>
