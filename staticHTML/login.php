@@ -117,10 +117,40 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['email']) && isset($_PO
                                 <?php if($success): ?>
                                     <div class="message success"><?php echo $success; ?></div>
                                 <?php endif; ?>
+                                <?php
+                                $google_config_path = __DIR__ . '/../app/config/google_auth.json';
+                                $google_enabled = false;
+                                $google_login_url = '#';
+
+                                if (file_exists($google_config_path)) {
+                                    $gconfig = json_decode(file_get_contents($google_config_path), true);
+                                    if (isset($gconfig['enabled']) && $gconfig['enabled']) {
+                                        $google_enabled = true;
+                                        if (!empty($gconfig['client_id'])) {
+                                            $params = [
+                                                'client_id' => $gconfig['client_id'],
+                                                'redirect_uri' => $gconfig['redirect_uri'],
+                                                'response_type' => 'code',
+                                                'scope' => 'email profile'
+                                            ];
+                                            $google_login_url = 'https://accounts.google.com/o/oauth2/v2/auth?' . http_build_query($params);
+                                        }
+                                    }
+                                }
+                                ?>
+                                <?php if ($google_enabled): ?>
+                                <a href="<?=$google_login_url?>" class="btn-google">
+                                    <span><img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="google" style="width: 20px; height: 20px;" /></span>
+                                    Log in with Google
+                                </a>
+                                <?php else: ?>
+                                <!-- Google Login Disabled
                                 <a href="<?=$base_url?>" class="btn-google">
                                     <span><img src="https://gogoanime3.co/img/google.png" alt="google" /></span>
                                     Log in with Google
                                 </a>
+                                -->
+                                <?php endif; ?>
                                 <form method="post" action="<?=$base_url?>/login.html">
                                     <input type="email" name="email" placeholder="Email" required="required" value="">
                                     <input type="password" name="password" placeholder="Password" required="required">
