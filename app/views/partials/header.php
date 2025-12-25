@@ -6,22 +6,6 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Fetch genres for the menu
-// Assuming $conn is available (it should be included in parent files)
-// If not, we might need to require db.php if not already required.
-// But header.php is a partial, usually included after db setup.
-// To be safe, check if $conn exists.
-if (!isset($conn)) {
-    require_once __DIR__ . '/../../config/db.php';
-}
-
-try {
-    $genre_menu_stmt = $conn->query("SELECT * FROM genres ORDER BY name ASC");
-    $menu_genres = $genre_menu_stmt->fetchAll(PDO::FETCH_ASSOC);
-} catch (PDOException $e) {
-    $menu_genres = [];
-}
-
 // Optional: Enable error reporting during development (remove in production)
 // error_reporting(E_ALL);
 // ini_set('display_errors', 1);
@@ -53,9 +37,11 @@ try {
             <a class="btn telegram hidden-phone" style="margin-right:5px;" href="https://t.me/joinchat/W4lYQ-RGOQ05MmI9" target="_blank" data-url=""></a>
         </div>
         <div class="submenu_intro">
-            <a href="/request.php">Request</a>
+            <a href="<?= htmlspecialchars($base_url ?? '', ENT_QUOTES, 'UTF-8'); ?>/request">Request</a>
             <span>|</span>
             <a href="<?= htmlspecialchars($base_url ?? '', ENT_QUOTES, 'UTF-8'); ?>/contact-us.html">Contact us</a>
+            <span>|</span>
+            <a href="https://gogotaku.info" target="_blank">Gogotaku</a>
         </div>
     </div>
     <div class="clr"></div>
@@ -73,22 +59,6 @@ try {
         <div class="headnav_menu">
             <nav class="menu_top">
                 <ul>
-                    <li class="home"><a href="<?= htmlspecialchars($base_url ?? '', ENT_QUOTES, 'UTF-8'); ?>/home" title="Home" class="home ads-evt">Home</a></li>
-                    <li class="list"><a href="<?= htmlspecialchars($base_url ?? '', ENT_QUOTES, 'UTF-8'); ?>/anime-list" title="Anime list" class="list ads-evt">Anime list</a></li>
-                    <li class="seri"><a href="<?= htmlspecialchars($base_url ?? '', ENT_QUOTES, 'UTF-8'); ?>/new-season" title="New season" class="series ads-evt">New season</a></li>
-                    <li class="movies"><a href="<?= htmlspecialchars($base_url ?? '', ENT_QUOTES, 'UTF-8'); ?>/anime-movies" title="Movies" class="movie ads-evt">Movies</a></li>
-                    <li class="movies"><a href="<?= htmlspecialchars($base_url ?? '', ENT_QUOTES, 'UTF-8'); ?>/popular" title="Popular" class="popular ads-evt">Popular</a></li>
-                    <li class="movies show_mobis"><a href="/request.php" title="Request" class="popular online">Request</a></li>
-
-                    <li class="movie genre">
-                        <a href="javascript:void(0)" class="genre">Genre</a>
-                        <ul class="scroll-genre">
-                            <?php foreach($menu_genres as $mg): ?>
-                                <li><a href="/genre/<?=htmlspecialchars($mg['slug'])?>" title="<?=htmlspecialchars($mg['name'])?>"><?=htmlspecialchars($mg['name'])?></a></li>
-                            <?php endforeach; ?>
-                        </ul>
-                    </li>
-
                     <?php if (isset($_SESSION['user_id'])): ?>
                         <li class="show-mobile"><a href="/user.html">Profile</a></li>
                         <li class="show-mobile"><a href="/admin/logout.php">Logout</a></li>
@@ -96,12 +66,53 @@ try {
                         <li class="show-mobile"><a href="/login.html">Login</a></li>
                         <li class="show-mobile"><a href="/register.html">Sign up</a></li>
                     <?php endif; ?>
+                    <li class="home"><a href="<?= htmlspecialchars($base_url ?? '', ENT_QUOTES, 'UTF-8'); ?>/home" title="Home" class="home ads-evt">Home</a></li>
+                    <li class="list"><a href="<?= htmlspecialchars($base_url ?? '', ENT_QUOTES, 'UTF-8'); ?>/anime-list" title="Anime list" class="list ads-evt">Anime list</a></li>
+                    <li class="seri"><a href="<?= htmlspecialchars($base_url ?? '', ENT_QUOTES, 'UTF-8'); ?>/new-season" title="New season" class="series ads-evt">New season</a></li>
+                    <li class="movies"><a href="<?= htmlspecialchars($base_url ?? '', ENT_QUOTES, 'UTF-8'); ?>/anime-movies" title="Movies" class="movie ads-evt">Movies</a></li>
+                    <li class="movies"><a href="<?= htmlspecialchars($base_url ?? '', ENT_QUOTES, 'UTF-8'); ?>/popular" title="Popular" class="popular ads-evt">Popular</a></li>
+                    <li class="movies show_mobis">
+                        <a href="<?= htmlspecialchars($base_url ?? '', ENT_QUOTES, 'UTF-8'); ?>/request" title="Request" class="popular online">Request</a>
+                    </li>
+
+                    <li class="movie genre hide">
+                        <a href="javascript:void(0)" class="genre">Genre</a>
+                        <ul>
+                            <?php
+                            // Determine the path to db.php.
+                            // If this header is included from a file in root (most cases), __DIR__ is app/views/partials
+                            // So we need to go up to app/config/db.php
+                            $dbPath = __DIR__ . '/../../config/db.php';
+                            if (file_exists($dbPath)) {
+                                require_once $dbPath;
+                            } else {
+                                // Fallback: try finding it relative to where the script is executed if needed, or assume it's already included
+                                // But usually require_once is safe if already included.
+                            }
+
+                            if (isset($conn)) {
+                                try {
+                                    $genreStmt = $conn->query("SELECT name, slug FROM genres ORDER BY name ASC");
+                                    $genres = $genreStmt->fetchAll(PDO::FETCH_ASSOC);
+                                    foreach ($genres as $genre) {
+                                        echo '<li class="">';
+                                        echo '<a href="' . htmlspecialchars($base_url ?? '', ENT_QUOTES, 'UTF-8') . '/genre/' . htmlspecialchars($genre['slug'], ENT_QUOTES, 'UTF-8') . '" title="' . htmlspecialchars($genre['name'], ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($genre['name'], ENT_QUOTES, 'UTF-8') . '</a>';
+                                        echo '</li>';
+                                    }
+                                } catch (PDOException $e) {
+                                    // Silently fail or log error
+                                    error_log("Error fetching genres: " . $e->getMessage());
+                                }
+                            }
+                            ?>
+                        </ul>
+                    </li>
                 </ul>
             </nav>
         </div>
         <div class="headnav_right">
             <div class="form">
-                <form onsubmit="return true;" id="search-form" action="<?= htmlspecialchars($base_url ?? '', ENT_QUOTES, 'UTF-8'); ?>/search.php" method="get">
+                <form onsubmit="return true;" id="search-form" action="<?= htmlspecialchars($base_url ?? '', ENT_QUOTES, 'UTF-8'); ?>/search" method="get">
                     <div class="row">
                         <input placeholder="search" name="keyword" id="keyword" type="text" value="" autocomplete="off">
                         <input class="btngui" value="" type="submit" name="">
@@ -116,45 +127,12 @@ try {
     </section>
 
     <style>
-        .scroll-genre {
-            max-height: 400px;
-            overflow-y: auto;
-            width: 300px; /* Adjust width as needed */
-            background: #222;
-            padding: 10px;
-        }
-        .scroll-genre li {
-            width: 33%; /* 3 columns */
-            float: left;
-            display: block;
-        }
-        .scroll-genre li a {
-            padding: 5px;
-            display: block;
-            color: #ccc;
-            font-size: 12px;
-        }
-        .scroll-genre li a:hover {
-            color: #ffc119;
-        }
-        /* Mobile styles */
         @media only screen and (max-width: 768px) {
             .show-mobile { display: block !important; border-bottom: 1px solid #333; }
             .show-mobile a { display: block; padding: 10px 15px; color: #fff; }
-            .show_mobis { display: block !important; }
         }
         @media only screen and (min-width: 769px) {
             .show-mobile { display: none !important; }
-            .show_mobis { display: none; } /* Hide request in main menu on desktop if specific class used */
-        }
-        /* Ensure dropdown appears on hover for desktop */
-        nav.menu_top ul li.genre:hover ul {
-            display: block;
-            position: absolute;
-            z-index: 9999;
-        }
-        nav.menu_top ul li.genre ul {
-            display: none;
         }
     </style>
 </header>
