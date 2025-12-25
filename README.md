@@ -1,134 +1,229 @@
 ![GogoAnime Clone Logo](logos/(HIGH-RES)GogoAnime-RE.png)
 
-# GogoAnime Clone System 
+# 🎌 GogoAnime Clone System — GogoAnime-RE
+**OFFICIAL REPOSITORY DOCUMENTATION**  
+A standalone vanilla PHP CMS for building anime streaming platforms with external video embedding.
 
-**OFFICIAL REPOSITORY DOCUMENTATION**
+---
+
+## 📌 Table of Contents
+1. [Project Identification](#1-project-identification)
+2. [Purpose and Scope](#2-purpose-and-scope)
+3. [System Summary](#3-system-summary)
+4. [Key Capabilities](#4-key-capabilities)
+5. [Technology Stack](#5-technology-stack)
+6. [High-Level Architecture](#6-high-level-architecture)
+7. [Directory Overview](#7-directory-overview)
+8. [Installation & Setup Summary](#8-installation--setup-summary)
+9. [🚀 Quick Setup (Recommended for Non-Technical Users)](#-quick-setup-recommended-for-non-technical-users)
+10. [Configuration Overview](#10-configuration-overview)
+11. [Administration Overview](#11-administration-overview)
+12. [Security Model Summary](#12-security-model-summary)
+13. [Operational Notes](#13-operational-notes)
+14. [Maintenance Expectations](#14-maintenance-expectations)
+15. [Limitations & Assumptions](#15-limitations-and-assumptions)
+16. [License](#16-license)
+17. [References](#17-references)
+
+---
 
 ## 1. Project Identification
-- **Project Name:** GogoAnime Clone System
+- **Project Name:** GogoAnime Clone System (GogoAnime-RE)
 - **Repository Type:** Anime Streaming Web Application
 - **Version:** 1.0.0
-- **Status:** Maintenance / Active Development
+- **Status:** Active Development & Maintenance
+
+---
 
 ## 2. Purpose and Scope
-The GogoAnime Clone System is a comprehensive web-based platform designed to facilitate the cataloging, management, and streaming of anime content. It provides a dual-interface system:
-1.  **Public Frontend:** Allows users to browse, search, watch anime episodes, and manage personal bookmarks.
-2.  **Administrative Backend:** Enables operators to manage the content library (anime, episodes, genres), user accounts, and system configurations.
+A comprehensive CMS-based streaming interface for listing anime titles, episodes, details, and embedded video players — with a full admin panel for content management.
 
-The scope of this repository includes the full source code for the application logic, database schema, and frontend assets.
+---
 
 ## 3. System Summary
-The system is built on a standard **LAMP/LEMP stack** (Linux, Apache/Nginx, MySQL, PHP). It utilizes a custom PHP framework structure with a mix of root-level routing and MVC-style organization.
+Designed for **LAMP/LEMP stack**: Linux, Apache/Nginx, MySQL, PHP  
+Uses lightweight structure — no heavy dependencies.
 
-Key components include:
--   **Content Management System (CMS):** tailored for anime metadata and video links.
--   **User Management:** Registration, login, and role-based access control (User vs. Admin).
--   **Streaming Interface:** Integration with third-party video providers.
--   **Search & Discovery:** Filtering by genre, status, and alphabetical order.
+---
 
 ## 4. Key Capabilities
--   **Anime Cataloging:** Support for detailed metadata (synopsis, release date, status, type).
--   **Episode Management:** Multi-provider support for video hosting (e.g., Gogoanime, StreamSB).
--   **User Engagement:** Comments, bookmarks, and contact forms.
--   **Categorization:** Robust genre and sub-category filing systems.
--   **SEO Friendly:** URL rewriting for human-readable links.
+- Anime Catalog & Metadata
+- Multiple Episode Providers
+- Bookmarks & Comments
+- Genre / Status Filtering
+- SEO-friendly URLs
+- Full Admin CMS
+
+---
 
 ## 5. Technology Stack
--   **Language:** PHP (7.x / 8.x compatible)
--   **Database:** MySQL (Primary) or SQLite (Supported) via PDO
--   **Server:** Apache (requires `mod_rewrite`)
--   **Frontend:** HTML5, CSS3, JavaScript
--   **Styling:** Custom CSS assets
+| Component | Technology |
+|----------|------------|
+| Language | PHP 7+ / PHP 8+ |
+| Database | MySQL (Primary) / SQLite (Compatible PDO) |
+| Server | Apache + `mod_rewrite` |
+| Frontend | HTML5, CSS3, JavaScript |
+
+---
 
 ## 6. High-Level Architecture
-The application follows a page-controller pattern where specific URL endpoints map directly to PHP scripts, which then leverage shared components.
-
 ```ascii
-[User Browser]
-      |
-      v
-[Web Server (Apache)] -> [.htaccess Rules]
-      |
-      +---> [Public Interface] (Root *.php)
-      |         |
-      |         +--> [Controllers] (app/controllers/)
-      |         +--> [Views/Layouts] (app/views/)
-      |
-      +---> [Admin Interface] (admin/*.php)
-      |         |
-      |         +--> [Auth Check]
-      |         +--> [CRUD Operations]
-      |
-      v
-[Database Layer (PDO)]
-      |
-      v
-[MySQL / SQLite]
-```
+[User Browsers]
+      ↓
+[Apache + .htaccess]
+      ↓
+ Frontend (Public UI) ---- Admin Panel (CRUD)
+      ↓                           ↓
+           [Database Layer → MySQL]
+````
+
+---
 
 ## 7. Directory Overview
--   **`admin/`**: Administrative panel scripts and logic.
--   **`app/`**: Core application logic, configuration, and views.
--   **`assets/`**: Static resources (images, CSS, JS).
--   **`genre/`**: Genre-specific routing handlers.
--   **`staticHTML/`**: Static page templates (Login, Privacy, etc.).
--   **`status/`**: Handlers for anime status filtering (Ongoing/Completed).
--   **`sub-category/`**: Sub-category routing logic.
--   **`Root`**: Primary public-facing entry points (`index.php`, `anime-details.php`, etc.).
+
+* `/admin/` → Full CMS backend
+* `/app/` → Core logic and configs
+* `/assets/` → CSS/JS/Images
+* `/genre/`, `/status/`, `/sub-category/` → Routing handlers
+* `/staticHTML/` → Login & static pages
+
+---
 
 ## 8. Installation & Setup Summary
-1.  **Clone Repository:** Download the source code.
-2.  **Database Setup:** Import `database.sql` into a MySQL database.
-3.  **Configuration:**
-    -   Copy `app/config/db.php` (or create `app/config/config.local.php`).
-    -   Update database credentials (`host`, `dbname`, `username`, `password`).
-4.  **Server Config:** Ensure Apache `mod_rewrite` is enabled. Point document root to the repository root.
-5.  **Permissions:** Ensure `assets/uploads` is writable.
 
-*See [INSTALLATION.md](INSTALLATION.md) for detailed instructions.*
+1. Clone / download the repository
+2. Create a MySQL database & import `database.sql` (root directory)
+3. Update database credentials in:
 
-## 9. Configuration Overview
-The system is configured primarily through PHP files located in `app/config/`.
--   **`db.php`**: Database connection settings.
--   **`info.php`**: Site-wide metadata.
--   **`app.json`**: Deployment metadata.
+   ```
+   app/config/db.php
+   ```
+4. Ensure Apache `mod_rewrite` is enabled
+5. Point Document Root to repository
+6. Set writable permissions for `assets/uploads/`
 
-*See [CONFIGURATION.md](CONFIGURATION.md) for details.*
+Full install guide → *INSTALLATION.md*
 
-## 10. Administration Overview
-Access the admin panel via `/admin/`. Default credentials must be set directly in the database or via the registration of the first admin user (see implementation details). Capabilities include adding anime, managing episodes, and moderating users.
+---
 
-*See [ADMIN_GUIDE.md](ADMIN_GUIDE.md) for the operator manual.*
+## 🚀 Quick Setup (Recommended for Non-Technical Users)
 
-## 11. Security Model Summary
--   **Authentication:** Session-based login with hashed passwords.
--   **Authorization:** Role-based checks (Admin vs. Standard User).
--   **Input Handling:** PDO prepared statements are used for database interaction to prevent SQL injection (verify in code reviews).
--   **CSRF Protection:** Implemented in critical forms (see `app/config/csrf.php`).
+> ⭐ This is the **fastest** way to get your site running!
 
-*See [SECURITY.md](SECURITY.md) for a full security audit and guidelines.*
+1. **Delete** this file:
 
-## 12. Operational Notes
--   **Video Hosting:** The system does not host video files directly; it embeds links from external providers.
--   **Traffic:** Heavy traffic is offloaded to video providers; local load is primarily database reads.
+   ```
+   app/config/config.local.php
+   ```
+2. **Open and edit**:
 
-## 13. Maintenance Expectations
--   **Regular Backups:** Database dumps should be performed weekly.
--   **Link Verification:** External video links may expire; regular audits are required.
--   **Logs:** Monitor web server logs for PHP errors.
+   ```
+   app/config/db.php
+   ```
 
-## 14. Limitations and Assumptions
--   **Assumption:** The server environment supports `.htaccess` rewrites.
--   **Limitation:** No built-in video transcoding or hosting.
--   **Limitation:** User registration does not include email verification by default (requires configuration).
+   ➜ Add only your MySQL details
+   (`host`, `dbname`, `username`, `password`)
+3. **Import**:
 
-## 15. Licensing Summary
-This software is proprietary and confidential unless explicitly open-sourced under a specific license file.
+   ```
+   database.sql
+   ```
 
-*See [LICENSE](LICENSE) for legal terms.*
+   into your database
+4. Upload the project to your hosting
+5. Visit your admin login **directly**:
 
-## 16. References
--   [Architecture Document](ARCHITECTURE.md)
--   [System Overview](SYSTEM_OVERVIEW.md)
--   [Directory Structure](DIRECTORY_STRUCTURE.md)
--   [Documentation Index](DOCUMENTATION_INDEX.md)
+   ```
+   https://www.yourweb.com/admin/login.php
+   ```
+
+**Default Admin Login**
+
+* Email: **[admin@gogoanime.com](mailto:admin@gogoanime.com)**
+* Password: **admin123**
+>[!IMPORTANT]
+> (MUST CHANGE password after login into admin panel from Users->Edit).
+
+🎉 Voilà! Admin Panel is live — Add anime & enjoy your own streaming site!
+
+---
+
+## 10. Configuration Overview
+
+Config is handled via:
+
+* `app/config/db.php` — DB credentials
+* `app/config/info.php` — Website metadata
+* `app/app.json` — Deployment info
+
+More detail → *CONFIGURATION.md*
+
+---
+
+## 11. Administration Overview
+
+The Admin CMS supports:
+
+* Anime / Genre / Episode Management
+* User & Comment moderation
+* SEO metadata editing
+
+Access: `/admin/login.php`
+Docs → *ADMIN_GUIDE.md*
+
+---
+
+## 12. Security Model Summary
+
+* Hashed passwords (DB)
+* Role-based Access Control
+* SQL injection protection (PDO prepared statements)
+* CSRF token checks in sensitive forms
+
+---
+
+## 13. Operational Notes
+
+* Does *not* host video files — only embeds external links
+* Ensure link freshness for optimal streaming
+
+---
+
+## 14. Maintenance Expectations
+
+* Weekly DB backups recommended
+* Audit episode links regularly
+* Monitor PHP error logs
+
+---
+
+## 15. Limitations and Assumptions
+
+| Area          | Note                           |
+| ------------- | ------------------------------ |
+| Video Hosting | No local hosting / transcoding |
+| Emails        | No built-in verification       |
+| Rewrites      | Requires `.htaccess` support   |
+
+---
+
+## 16. License
+
+This software is **proprietary** unless specified otherwise in `LICENSE`.
+
+---
+
+## 17. References
+
+* *ARCHITECTURE.md*
+* *SYSTEM_OVERVIEW.md*
+* *DIRECTORY_STRUCTURE.md*
+* *DOCUMENTATION_INDEX.md*
+
+---
+
+### 💬 Need help customizing or installing?
+
+Open an issue — contributions and improvements are welcome!
+
+---

@@ -24,10 +24,13 @@
         <a href="/admin/country_list.php"><i class="fas fa-globe"></i> Countries</a>
         <a href="/admin/season_list.php"><i class="fas fa-cloud-sun"></i> Seasons</a>
         <a href="/admin/type_list.php"><i class="fas fa-list"></i> Types</a>
+        <a href="/admin/provider_list.php"><i class="fas fa-server"></i> Video Sources</a>
         <a href="/admin/request_list.php"><i class="fas fa-clipboard-list"></i> Requests</a>
         <a href="/admin/users.php"><i class="fas fa-users"></i> Users</a>
         <!-- Comments handled by Disqus -->
         <a href="/admin/messages.php"><i class="fas fa-envelope"></i> Messages</a>
+        <a href="/admin/ads_config.php"><i class="fas fa-ad"></i> Ads Config</a>
+        <a href="/admin/google_config.php"><i class="fas fa-g"></i> Google Config</a>
         <a href="/admin/logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
     <div class="main-content">

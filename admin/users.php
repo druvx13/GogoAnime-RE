@@ -19,7 +19,11 @@ $stmt = $conn->query("SELECT id, name, email, role, created_at FROM users ORDER 
 $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
-<h2>User Management</h2>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>User Management</h2>
+    <a href="user_add.php" class="btn btn-primary">Add New User</a>
+</div>
+
 <?php if(isset($success)): ?><div class="alert alert-success"><?=$success?></div><?php endif; ?>
 
 <table class="table table-bordered table-striped">
@@ -46,6 +50,7 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </td>
             <td><?=$user['created_at']?></td>
             <td>
+                <a href="user_edit.php?id=<?=$user['id']?>" class="btn btn-sm btn-info">Edit</a>
                 <form method="POST" style="display:inline-block">
                     <?php csrf_field(); ?>
                     <input type="hidden" name="user_id" value="<?=$user['id']?>">
