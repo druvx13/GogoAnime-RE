@@ -78,8 +78,8 @@
 
   <!-- banner -->
   <section class="headnav">
-    <div style="text-align:center;margin-bottom:20px;">
-      <a href="/home"><img src="<?=$base_url?>/assets/img/logo.svg" class="l-logo" alt="gogoanime - Watch Anime Online" /></a>
+    <div style="text-align:center;margin-bottom:10px;">
+      <a href="/home"><img src="<?=$base_url?>/assets/img/logo.png" class="l-logo" alt="gogoanime - Watch Anime Online" /></a>
     </div>
     <div style="width:100%;font-family: Tahoma, Geneva, sans-serif;font-size: 14px;text-transform: uppercase;text-align:center;">
       <!-- menu top -->
@@ -120,7 +120,7 @@
         <div class="clr"></div>
         <div class="search-iph"><a href="javascript:void(0)"><i class="icongec-search-mb"></i></a></div>
       </div>
-      <div style="text-align:center;color:#00a651;text-transform:none;">Make sure to bookmark the domain <a style="color:#ffc119;" href="https://gogotaku.info/" target="_blank">gogotaku.info</a> to stay updated.</div>
+      <!---<div style="text-align:center;color:#00a651;text-transform:none;">Make sure to bookmark the domain <a style="color:#ffc119;" href="https://gogotaku.info/" target="_blank">gogotaku.info</a> to stay updated.</div>--->
   </section>
   <!-- /banner -->
 </header>
