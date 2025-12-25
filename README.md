@@ -15,7 +15,7 @@ A standalone vanilla PHP CMS for building anime streaming platforms with externa
 6. [High-Level Architecture](#6-high-level-architecture)
 7. [Directory Overview](#7-directory-overview)
 8. [Installation & Setup Summary](#8-installation--setup-summary)
-9. [🚀 Quick Setup (Recommended for Non-Technical Users)](#-quick-setup-recommended-for-nontechnical-users)
+9. [🚀 Quick Setup (Recommended for Non-Technical Users)](#-quick-setup-recommended-for-non-technical-users)
 10. [Configuration Overview](#10-configuration-overview)
 11. [Administration Overview](#11-administration-overview)
 12. [Security Model Summary](#12-security-model-summary)
