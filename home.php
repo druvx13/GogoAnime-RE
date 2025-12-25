@@ -400,9 +400,6 @@ $(document).ready(function () {
   }
 </style>
 <!---<div class="bg-notice" style="position:fixed;z-index:9999;background:#ffc119;bottom:0;text-align:center;color:#000;width:100%;padding:10px 0;font-weight:600;">We moved site to <a href="<?=$base_url?>" title="<?=$base_url?>" alt="Gogoanime"><?=$base_url?></a>. Please bookmark new site. Thank you!</div><div class="btn-notice" style="position:fixed;z-index:9999;background:#00a651;color:#fff;cursor:pointer;right:0;padding:3px 8px;">x</div>--->
-    <script>
-        LoadFilmOngoing(1);
-    </script>
 
     <script>
         if (document.getElementById('scrollbar2')) {
