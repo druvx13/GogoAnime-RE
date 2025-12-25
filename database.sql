@@ -39,7 +39,10 @@ CREATE TABLE `anime` (
   `image_url` varchar(255) DEFAULT NULL,
   `language` varchar(20) DEFAULT 'Sub',
   `views` int(11) DEFAULT 0,
-  `created_at` timestamp NULL DEFAULT current_timestamp()
+  `created_at` timestamp NULL DEFAULT current_timestamp(),
+  `country_id` int(11) DEFAULT NULL,
+  `season_id` int(11) DEFAULT NULL,
+  `type_id` int(11) DEFAULT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 -- --------------------------------------------------------
@@ -98,6 +101,19 @@ CREATE TABLE `contacts` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `countries`
+--
+
+CREATE TABLE `countries` (
+  `id` int(11) NOT NULL,
+  `name` varchar(100) NOT NULL,
+  `slug` varchar(100) NOT NULL,
+  `value` varchar(100) DEFAULT NULL
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `episodes`
 --
 
@@ -134,6 +150,30 @@ CREATE TABLE `genres` (
   `id` int(11) NOT NULL,
   `name` varchar(100) NOT NULL,
   `slug` varchar(100) NOT NULL
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `seasons`
+--
+
+CREATE TABLE `seasons` (
+  `id` int(11) NOT NULL,
+  `name` varchar(100) NOT NULL,
+  `value` varchar(100) DEFAULT NULL
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `types`
+--
+
+CREATE TABLE `types` (
+  `id` int(11) NOT NULL,
+  `name` varchar(100) NOT NULL,
+  `value` varchar(100) DEFAULT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 -- --------------------------------------------------------
@@ -209,6 +249,12 @@ ALTER TABLE `contacts`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Indexes for table `countries`
+--
+ALTER TABLE `countries`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- Indexes for table `episodes`
 --
 ALTER TABLE `episodes`
@@ -231,6 +277,18 @@ ALTER TABLE `genres`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `name` (`name`),
   ADD UNIQUE KEY `slug` (`slug`);
+
+--
+-- Indexes for table `seasons`
+--
+ALTER TABLE `seasons`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `types`
+--
+ALTER TABLE `types`
+  ADD PRIMARY KEY (`id`);
 
 --
 -- Indexes for table `users`
@@ -276,6 +334,12 @@ ALTER TABLE `contacts`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `countries`
+--
+ALTER TABLE `countries`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `episodes`
 --
 ALTER TABLE `episodes`
@@ -291,6 +355,18 @@ ALTER TABLE `episode_videos`
 -- AUTO_INCREMENT for table `genres`
 --
 ALTER TABLE `genres`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `seasons`
+--
+ALTER TABLE `seasons`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `types`
+--
+ALTER TABLE `types`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
@@ -317,6 +393,21 @@ VALUES (
   NULL,
   CURRENT_TIMESTAMP()
 );
+
+INSERT INTO `countries` (`name`, `slug`, `value`) VALUES ('Japan', 'japan', '2');
+INSERT INTO `countries` (`name`, `slug`, `value`) VALUES ('China', 'china', '5');
+
+INSERT INTO `seasons` (`name`, `value`) VALUES ('Winter', '1');
+INSERT INTO `seasons` (`name`, `value`) VALUES ('Spring', '2');
+INSERT INTO `seasons` (`name`, `value`) VALUES ('Summer', '3');
+INSERT INTO `seasons` (`name`, `value`) VALUES ('Fall', '4');
+
+INSERT INTO `types` (`name`, `value`) VALUES ('TV', '1');
+INSERT INTO `types` (`name`, `value`) VALUES ('Movie', '2');
+INSERT INTO `types` (`name`, `value`) VALUES ('OVA', '3');
+INSERT INTO `types` (`name`, `value`) VALUES ('ONA', '4');
+INSERT INTO `types` (`name`, `value`) VALUES ('Special', '5');
+INSERT INTO `types` (`name`, `value`) VALUES ('Music', '6');
 
 COMMIT;
 
