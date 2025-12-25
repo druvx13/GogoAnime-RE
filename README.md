@@ -141,7 +141,8 @@ Full install guide → *INSTALLATION.md*
 
 * Email: **[admin@gogoanime.com](mailto:admin@gogoanime.com)**
 * Password: **admin123**
-* (MUST CHANGE password after login into admin panel from Users->Edit).
+>[!IMPORTANT]
+> (MUST CHANGE password after login into admin panel from Users->Edit).
 
 🎉 Voilà! Admin Panel is live — Add anime & enjoy your own streaming site!
 
