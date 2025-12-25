@@ -155,6 +155,21 @@ CREATE TABLE `genres` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `requests`
+--
+
+CREATE TABLE `requests` (
+  `id` int(11) NOT NULL,
+  `title` varchar(255) NOT NULL,
+  `link` varchar(255) DEFAULT NULL,
+  `message` text DEFAULT NULL,
+  `status` varchar(50) DEFAULT 'pending',
+  `created_at` timestamp NULL DEFAULT current_timestamp()
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `seasons`
 --
 
@@ -279,6 +294,12 @@ ALTER TABLE `genres`
   ADD UNIQUE KEY `slug` (`slug`);
 
 --
+-- Indexes for table `requests`
+--
+ALTER TABLE `requests`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- Indexes for table `seasons`
 --
 ALTER TABLE `seasons`
@@ -355,6 +376,12 @@ ALTER TABLE `episode_videos`
 -- AUTO_INCREMENT for table `genres`
 --
 ALTER TABLE `genres`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `requests`
+--
+ALTER TABLE `requests`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --

@@ -24,6 +24,7 @@
         <a href="/admin/country_list.php"><i class="fas fa-globe"></i> Countries</a>
         <a href="/admin/season_list.php"><i class="fas fa-cloud-sun"></i> Seasons</a>
         <a href="/admin/type_list.php"><i class="fas fa-list"></i> Types</a>
+        <a href="/admin/request_list.php"><i class="fas fa-clipboard-list"></i> Requests</a>
         <a href="/admin/users.php"><i class="fas fa-users"></i> Users</a>
         <!-- Comments handled by Disqus -->
         <a href="/admin/messages.php"><i class="fas fa-envelope"></i> Messages</a>
