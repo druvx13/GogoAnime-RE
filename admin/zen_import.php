@@ -12,7 +12,7 @@ function getActiveApiUrl() {
     global $conn;
     // Auto-create table if missing (Self-healing)
     try {
-        $stmt = $conn->query("SELECT url FROM api_configs WHERE is_active = 1 LIMIT 1");
+        $stmt = $conn->query("SELECT url FROM api_configs WHERE is_active = 1 AND type = 'zen' LIMIT 1");
         if ($row = $stmt->fetch()) {
             return $row['url'];
         }
@@ -268,34 +268,65 @@ if ($step === 'process_import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                             $srvs = fetchZen("/servers/" . urlencode($ep_zen_id));
                             $server_list = $srvs['results'] ?? [];
 
-                            $chosen_server = null;
+                            $final_link = '';
+
                             if (is_array($server_list)) {
-                                foreach($server_list as $s) {
-                                     // Prioritize known good servers
-                                     if (stripos($s['serverName'], 'vidstreaming') !== false) { $chosen_server = $s; break; }
-                                     if (stripos($s['serverName'], 'gogostream') !== false) { $chosen_server = $s; break; }
-                                     if (stripos($s['serverName'], 'hd-1') !== false) { $chosen_server = $s; break; }
+                                // Prioritize known good servers
+                                usort($server_list, function($a, $b) {
+                                    $prio = ['vidstreaming', 'gogostream', 'hd-1', 'megacloud'];
+                                    $aScore = 999;
+                                    $bScore = 999;
+                                    foreach($prio as $idx => $name) {
+                                        if (stripos($a['serverName'], $name) !== false) { $aScore = $idx; break; }
+                                    }
+                                    foreach($prio as $idx => $name) {
+                                        if (stripos($b['serverName'], $name) !== false) { $bScore = $idx; break; }
+                                    }
+                                    return $aScore <=> $bScore;
+                                });
+
+                                foreach ($server_list as $server) {
+                                    // Construct the ID format as expected by Zen-API: anime-slug?ep=episode-id
+                                    $stream_id_param = $zen_id . "?ep=" . $ep_zen_id;
+                                    $stream_url = "/stream?id=" . urlencode($stream_id_param) . "&server=" . urlencode($server['serverName']) . "&type=sub";
+                                    $stream_data = fetchZen($stream_url);
+
+                                    $res = $stream_data['results'] ?? [];
+
+                                    // Format 1: streamingLink[0].link.file
+                                    if (isset($res['streamingLink']) && is_array($res['streamingLink'])) {
+                                         if (isset($res['streamingLink'][0]['link']['file'])) {
+                                             $final_link = $res['streamingLink'][0]['link']['file'];
+                                         }
+                                    }
+
+                                    // Format 2: sources[0].file
+                                    if (!$final_link && isset($res['sources']) && is_array($res['sources'])) {
+                                        if (isset($res['sources'][0]['file'])) {
+                                            $final_link = $res['sources'][0]['file'];
+                                        }
+                                        if (!$final_link && isset($res['sources'][0]['url'])) {
+                                            $final_link = $res['sources'][0]['url'];
+                                        }
+                                    }
+
+                                    // Format 3: link object or string
+                                    if (!$final_link && isset($res['link'])) {
+                                        if (is_array($res['link']) && isset($res['link']['file'])) {
+                                            $final_link = $res['link']['file'];
+                                        } elseif (is_string($res['link'])) {
+                                            $final_link = $res['link'];
+                                        }
+                                    }
+
+                                    if ($final_link) break; // Found a link
                                 }
-                                if (!$chosen_server && !empty($server_list)) $chosen_server = $server_list[0];
                             }
 
-                            if ($chosen_server) {
-                                $stream_url = "/stream?id=" . urlencode($ep_zen_id) . "&server=" . urlencode($chosen_server['serverName']) . "&type=sub";
-                                $stream_data = fetchZen($stream_url);
-
-                                $final_link = '';
-                                if (isset($stream_data['results']['streamingLink']) && is_array($stream_data['results']['streamingLink'])) {
-                                    $links = $stream_data['results']['streamingLink'];
-                                     if (isset($links[0]['link']['file'])) {
-                                         $final_link = $links[0]['link']['file'];
-                                     }
-                                }
-
-                                if ($final_link) {
-                                    $vstmt = $conn->prepare("INSERT INTO episode_videos (episode_id, provider_id, video_url) VALUES (?, ?, ?)");
-                                    $vstmt->execute([$local_ep_id, $zen_provider_id, $final_link]);
-                                    $conn->prepare("UPDATE episodes SET video_url = ? WHERE id = ?")->execute([$final_link, $local_ep_id]);
-                                }
+                            if ($final_link) {
+                                $vstmt = $conn->prepare("INSERT INTO episode_videos (episode_id, provider_id, video_url) VALUES (?, ?, ?)");
+                                $vstmt->execute([$local_ep_id, $zen_provider_id, $final_link]);
+                                $conn->prepare("UPDATE episodes SET video_url = ? WHERE id = ?")->execute([$final_link, $local_ep_id]);
                             }
 
                             $imported_eps++;
@@ -369,6 +400,11 @@ if ($step === 'process_import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 
             if ($data && isset($data['success']) && $data['success']) {
                 $results = $data['results'] ?? [];
+
+                // Fix for nested data structure in search results
+                if (isset($results['data']) && is_array($results['data'])) {
+                    $results = $results['data'];
+                }
 
                 if (!empty($results)) {
                     ?>
