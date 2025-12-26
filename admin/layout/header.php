@@ -31,6 +31,8 @@
         <a href="/admin/messages.php"><i class="fas fa-envelope"></i> Messages</a>
         <a href="/admin/ads_config.php"><i class="fas fa-ad"></i> Ads Config</a>
         <a href="/admin/google_config.php"><i class="fas fa-g"></i> Google Config</a>
+        <a href="/admin/zen_import.php"><i class="fas fa-cloud-download-alt"></i> Zen-API Import</a>
+        <a href="/admin/api_config.php"><i class="fas fa-cogs"></i> API Config</a>
         <a href="/admin/logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
     <div class="main-content">
