@@ -2,6 +2,7 @@
 require_once 'auth.php';
 require_once '../app/config/db.php';
 require_once 'layout/header.php';
+require_once 'import_helpers.php'; // Include shared helpers
 
 // Increase execution time for large imports
 set_time_limit(300);
@@ -128,24 +129,24 @@ $db_genres = $conn->query("SELECT * FROM genres")->fetchAll(PDO::FETCH_ASSOC);
 
 if ($step === 'process_import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $ani_id = $_POST['ani_id'];
+    $animeData = isset($_POST['anime_data']) ? json_decode(htmlspecialchars_decode($_POST['anime_data']), true) : null;
+    $videos = $_POST['videos'] ?? [];
 
-    // 1. Fetch Details: /anime/{id}
-    $infoData = fetchAniwatch("/anime/" . urlencode($ani_id));
+    if (!$animeData) {
+        $infoData = fetchAniwatch("/anime/" . urlencode($ani_id));
+        $isSuccess = ($infoData && ((isset($infoData['success']) && $infoData['success']) || (isset($infoData['status']) && $infoData['status'] === 200)));
+        if ($isSuccess && isset($infoData['data']['anime'])) {
+            $animeData = $infoData['data']['anime'];
+        }
+    }
 
-    // Check success or status 200
-    $isSuccess = ($infoData && ((isset($infoData['success']) && $infoData['success']) || (isset($infoData['status']) && $infoData['status'] === 200)));
-
-    if (!$isSuccess || !isset($infoData['data']['anime']['info'])) {
-        $err = "Unknown error";
-        if (isset($infoData['error'])) $err = $infoData['message'];
-        else if (is_array($infoData)) $err = json_encode($infoData);
-
-        $msg = "Failed to fetch anime details: " . $err;
+    if (empty($animeData)) {
+        $msg = "Failed to fetch anime details or invalid data.";
         $msg_type = "danger";
         $step = 'search';
     } else {
-        $animeInfo = $infoData['data']['anime']['info'];
-        $moreInfo = $infoData['data']['anime']['moreInfo'] ?? [];
+        $animeInfo = $animeData['info'];
+        $moreInfo = $animeData['moreInfo'] ?? [];
 
         $title = $animeInfo['name'];
         $synopsis = $animeInfo['description'];
@@ -465,12 +466,25 @@ if ($step === 'process_import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                                 Ready to import. This may take a while to fetch all episodes.
                             </div>
 
-                            <form method="POST" action="?step=process_import">
+                            <form method="POST" action="?step=scan">
                                 <?php csrf_field(); ?>
                                 <input type="hidden" name="ani_id" value="<?=htmlspecialchars($import_id)?>">
+
+                                <h5 class="mt-4"><i class="fas fa-filter"></i> Scan Options</h5>
+                                <div class="row g-3 mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Episode Range (Start)</label>
+                                        <input type="number" name="ep_start" class="form-control" value="1" min="1">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Episode Range (End)</label>
+                                        <input type="number" name="ep_end" class="form-control" placeholder="Leave empty for all">
+                                    </div>
+                                </div>
+
                                 <div class="d-grid gap-2 d-md-block">
-                                    <button type="submit" class="btn btn-success btn-lg px-5">
-                                        <i class="fas fa-file-import"></i> Confirm Import
+                                    <button type="submit" class="btn btn-primary btn-lg px-5">
+                                        <i class="fas fa-satellite-dish"></i> Scan for Links
                                     </button>
                                     <a href="?step=search" class="btn btn-secondary btn-lg">Cancel</a>
                                 </div>
@@ -487,6 +501,140 @@ if ($step === 'process_import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             echo '<div class="alert alert-danger">Failed to fetch details.</div>';
         }
         ?>
+    <?php endif; ?>
+
+    <!-- SCAN INTERFACE -->
+    <?php if ($step === 'scan' && $_SERVER['REQUEST_METHOD'] === 'POST'): ?>
+        <?php
+        $ani_id = $_POST['ani_id'];
+        $ep_start = max(1, intval($_POST['ep_start'] ?? 1));
+        $ep_end = intval($_POST['ep_end'] ?? 0);
+
+        // Fetch basic info again for context
+        $infoData = fetchAniwatch("/anime/" . urlencode($ani_id));
+        $anime = $infoData['data']['anime']['info'] ?? [];
+        $more = $infoData['data']['anime']['moreInfo'] ?? [];
+        $title = $anime['name'] ?? 'Unknown Anime';
+
+        // Fetch Episodes
+        $epsData = fetchAniwatch("/anime/" . urlencode($ani_id) . "/episodes");
+        $episodes = $epsData['data']['episodes'] ?? [];
+
+        // Filter Episodes
+        $filtered_eps = [];
+        foreach($episodes as $ep) {
+            $num = intval($ep['number']);
+            if ($num >= $ep_start && ($ep_end === 0 || $num <= $ep_end)) {
+                $filtered_eps[] = $ep;
+            }
+        }
+        ?>
+
+        <div class="card shadow mb-4">
+            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">Scan Results: <?=htmlspecialchars($title)?></h4>
+                <span class="badge bg-secondary"><?=count($filtered_eps)?> Episodes Selected</span>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="?step=process_import">
+                    <?php csrf_field(); ?>
+                    <input type="hidden" name="ani_id" value="<?=htmlspecialchars($ani_id)?>">
+                    <input type="hidden" name="anime_data" value="<?=htmlspecialchars(json_encode($infoData['data']['anime']))?>">
+
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover">
+                            <thead>
+                                <tr>
+                                    <th style="width: 80px;">Ep #</th>
+                                    <th>Available Streams (Select to Import)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach($filtered_eps as $ep):
+                                    $ep_num = $ep['number'];
+                                    $ep_id = $ep['episodeId'];
+
+                                    // Fetch Servers
+                                    $srvData = fetchAniwatch("/episode/servers?animeEpisodeId=" . urlencode($ep_id));
+                                    $server_list = $srvData['data']['sub'] ?? [];
+                                ?>
+                                <tr>
+                                    <td class="align-middle text-center fw-bold fs-5"><?=$ep_num?></td>
+                                    <td>
+                                        <div class="d-flex flex-wrap gap-3">
+                                            <?php
+                                            if (!empty($server_list)) {
+                                                foreach($server_list as $server) {
+                                                    $sName = $server['serverName'];
+
+                                                    // Fetch Link
+                                                    $srcUrl = "/episode/sources?animeEpisodeId=" . urlencode($ep_id) . "&server=" . urlencode($sName) . "&category=sub";
+                                                    $srcData = fetchAniwatch($srcUrl);
+
+                                                    $final_link = '';
+                                                    if (isset($srcData['data']['sources']) && is_array($srcData['data']['sources'])) {
+                                                        foreach($srcData['data']['sources'] as $src) {
+                                                            if (isset($src['url'])) {
+                                                                $final_link = $src['url'];
+                                                                break;
+                                                            }
+                                                        }
+                                                    }
+
+                                                    if ($final_link) {
+                                                        $status = checkUrlStatus($final_link);
+                                                        $color = getStatusColor($status);
+                                                        $uniq = "vid_" . $ep_num . "_" . md5($sName);
+                                                        ?>
+                                                        <div class="border p-2 rounded bg-light" style="max-width: 300px;">
+                                                            <div class="form-check">
+                                                                <input class="form-check-input server-chk" type="checkbox" name="videos[<?=$ep_num?>][]" value="<?=htmlspecialchars(json_encode(['server'=>$sName, 'link'=>$final_link]))?>" id="<?=$uniq?>" checked data-server="<?=htmlspecialchars($sName)?>">
+                                                                <label class="form-check-label fw-bold" for="<?=$uniq?>">
+                                                                    <?=htmlspecialchars(ucfirst($sName))?>
+                                                                </label>
+                                                            </div>
+                                                            <div class="mt-1 small text-truncate text-muted" title="<?=htmlspecialchars($final_link)?>">
+                                                                <i class="fas fa-link"></i> <?=htmlspecialchars($final_link)?>
+                                                            </div>
+                                                            <div class="mt-1">
+                                                                <span class="badge bg-<?=$color?>">HTTP <?=$status?></span>
+                                                            </div>
+                                                        </div>
+                                                        <?php
+                                                    }
+                                                }
+                                            } else {
+                                                echo '<span class="text-muted">No servers found.</span>';
+                                            }
+                                            ?>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="sticky-bottom bg-white border-top p-3 d-flex justify-content-between align-items-center shadow">
+                        <div>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleAll(true)">Select All</button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleAll(false)">Deselect All</button>
+                        </div>
+                        <div>
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="fas fa-file-import"></i> Finalize Import
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <script>
+        function toggleAll(state) {
+            document.querySelectorAll('.server-chk').forEach(el => el.checked = state);
+        }
+        </script>
     <?php endif; ?>
 
 </div>
