@@ -246,39 +246,42 @@ if ($step === 'process_import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                     // Prioritize servers: VidStreaming, MegaCloud, StreamTape...
                     // The API returns { sub: [...], dub: [...], raw: [...] }
                     $serverList = $srvData['data']['sub'] ?? [];
-                    // Merge dub if needed? let's stick to sub for now or check preferences.
-                    // Let's iterate sub servers.
 
-                    $chosen_server = null;
-                    $prio = ['vidstreaming', 'megacloud', 'hd-1', 'hd-2'];
-
-                    // Flatten server list to find best match
-                    foreach($prio as $p) {
-                        foreach($serverList as $s) {
-                            if (stripos($s['serverName'], $p) !== false) {
-                                $chosen_server = $s;
-                                break 2;
-                            }
+                    // Sort servers by priority
+                    usort($serverList, function($a, $b) {
+                        $prio = ['vidstreaming', 'megacloud', 'hd-1', 'hd-2'];
+                        $aScore = 999;
+                        $bScore = 999;
+                        foreach($prio as $idx => $name) {
+                            if (stripos($a['serverName'], $name) !== false) { $aScore = $idx; break; }
                         }
-                    }
-                    if (!$chosen_server && !empty($serverList)) $chosen_server = $serverList[0];
+                        foreach($prio as $idx => $name) {
+                            if (stripos($b['serverName'], $name) !== false) { $bScore = $idx; break; }
+                        }
+                        return $aScore <=> $bScore;
+                    });
 
                     $final_link = '';
-                    if ($chosen_server) {
+
+                    // Iterate through servers until we find a working link
+                    foreach ($serverList as $server) {
                         // Fetch Sources: /episode/sources?animeEpisodeId={id}&server={server}&category=sub
-                        $srcUrl = "/episode/sources?animeEpisodeId=" . urlencode($ep_id) . "&server=" . urlencode($chosen_server['serverName']) . "&category=sub";
+                        $srcUrl = "/episode/sources?animeEpisodeId=" . urlencode($ep_id) . "&server=" . urlencode($server['serverName']) . "&category=sub";
                         $srcData = fetchAniwatch($srcUrl);
 
-                        // data: { sources: [ { url: "...", isM3U8: true } ] }
-                        if (isset($srcData['data']['sources']) && is_array($srcData['data']['sources'])) {
+                        // Check if request was successful (status 200 or success: true)
+                        $isSrcSuccess = ($srcData && ((isset($srcData['success']) && $srcData['success']) || (isset($srcData['status']) && $srcData['status'] === 200)));
+
+                        if ($isSrcSuccess && isset($srcData['data']['sources']) && is_array($srcData['data']['sources'])) {
                             foreach($srcData['data']['sources'] as $src) {
                                 // Prefer m3u8 or just take first
                                 if (isset($src['url'])) {
                                     $final_link = $src['url'];
-                                    break;
+                                    break 2; // Break both loops (sources and servers)
                                 }
                             }
                         }
+                        // If failed, continue to next server
                     }
 
                     if ($final_link) {
@@ -328,6 +331,11 @@ if ($step === 'process_import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         <li class="nav-item">
             <a class="nav-link <?= ($step === 'search' && !$import_id) ? 'active' : '' ?>" href="?step=search">
                 <i class="fas fa-search"></i> Search
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="#" onclick="document.getElementById('manual-import-row').scrollIntoView({behavior: 'smooth'}); return false;">
+                <i class="fas fa-keyboard"></i> Manual Import
             </a>
         </li>
     </ul>
@@ -393,6 +401,28 @@ if ($step === 'process_import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
         ?>
+
+        <hr class="my-5">
+
+        <!-- Manual Import Section -->
+        <div id="manual-import-row" class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card border-info">
+                    <div class="card-header bg-info text-white">
+                        <i class="fas fa-bolt"></i> Manual Import by ID
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">If search fails, you can copy the ID from the Aniwatch URL and paste it here.</p>
+                        <form method="GET" action="aniwatch_import.php" class="d-flex gap-2">
+                            <input type="hidden" name="step" value="preview">
+                            <input type="text" name="id" class="form-control" placeholder="e.g. one-piece-100" required>
+                            <button type="submit" class="btn btn-info text-white">Preview</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     <?php endif; ?>
 
     <!-- PREVIEW INTERFACE -->
