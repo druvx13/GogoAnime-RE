@@ -27,8 +27,20 @@ function fetchAniwatch($endpoint) {
     usleep(200000); // 200ms
 
     $base_url = getActiveAniwatchUrl();
+
+    // Normalize base URL
+    $base_url = rtrim($base_url, '/');
+
+    // Auto-append path if missing, but only if it doesn't already end with it
+    if (strpos($base_url, '/api/v2/hianime') === false) {
+        $base_url .= '/api/v2/hianime';
+    }
+
     // Ensure clean URL construction
-    $url = rtrim($base_url, '/') . '/' . ltrim($endpoint, '/');
+    $url = $base_url . '/' . ltrim($endpoint, '/');
+
+    // Debug log to help users troubleshoot
+    // error_log("Aniwatch Fetch: $url");
 
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $url);
@@ -45,9 +57,13 @@ function fetchAniwatch($endpoint) {
 
     if ($http_code != 200 || $error) {
         error_log("Aniwatch API Error [$http_code]: $error - URL: $url");
-        return null;
+        return ['error' => true, 'message' => "HTTP $http_code: $error", 'url' => $url];
     }
-    return json_decode($data, true);
+    $decoded = json_decode($data, true);
+    if (!$decoded) {
+        return ['error' => true, 'message' => "Invalid JSON Response", 'url' => $url];
+    }
+    return $decoded;
 }
 
 function downloadImage($url, $save_dir) {
@@ -118,7 +134,9 @@ if ($step === 'process_import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Response schema: { success: true, data: { anime: { info: {...}, moreInfo: {...} } } }
     if (!$infoData || !isset($infoData['success']) || !$infoData['success'] || !isset($infoData['data']['anime']['info'])) {
-        $msg = "Failed to fetch anime details from Aniwatch API.";
+        $err = "Unknown error";
+        if (isset($infoData['error'])) $err = $infoData['message'];
+        $msg = "Failed to fetch anime details: " . $err;
         $msg_type = "danger";
         $step = 'search';
     } else {
@@ -358,7 +376,11 @@ if ($step === 'process_import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                     echo '<div class="alert alert-info text-center p-5"><h4>No results found.</h4></div>';
                 }
             } else {
-                echo '<div class="alert alert-warning">API connection failed. URL: ' . getActiveAniwatchUrl() . '</div>';
+                $errMsg = "Unknown Error";
+                if (isset($data['error']) && $data['error']) {
+                    $errMsg = $data['message'];
+                }
+                echo '<div class="alert alert-warning">API connection failed. Error: ' . htmlspecialchars($errMsg) . '</div>';
             }
         }
         ?>
