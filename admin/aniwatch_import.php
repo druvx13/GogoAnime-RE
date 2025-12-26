@@ -132,10 +132,14 @@ if ($step === 'process_import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     // 1. Fetch Details: /anime/{id}
     $infoData = fetchAniwatch("/anime/" . urlencode($ani_id));
 
-    // Response schema: { success: true, data: { anime: { info: {...}, moreInfo: {...} } } }
-    if (!$infoData || !isset($infoData['success']) || !$infoData['success'] || !isset($infoData['data']['anime']['info'])) {
+    // Check success or status 200
+    $isSuccess = ($infoData && ((isset($infoData['success']) && $infoData['success']) || (isset($infoData['status']) && $infoData['status'] === 200)));
+
+    if (!$isSuccess || !isset($infoData['data']['anime']['info'])) {
         $err = "Unknown error";
         if (isset($infoData['error'])) $err = $infoData['message'];
+        else if (is_array($infoData)) $err = json_encode($infoData);
+
         $msg = "Failed to fetch anime details: " . $err;
         $msg_type = "danger";
         $step = 'search';
@@ -344,7 +348,10 @@ if ($step === 'process_import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($keyword) {
             $data = fetchAniwatch("/search?q=" . urlencode($keyword));
 
-            if ($data && isset($data['success']) && $data['success']) {
+            // Check for success OR status 200 (some API versions use status)
+            $isSuccess = ($data && ((isset($data['success']) && $data['success']) || (isset($data['status']) && $data['status'] === 200)));
+
+            if ($isSuccess) {
                 $results = $data['data']['animes'] ?? [];
 
                 if (!empty($results)) {
@@ -379,6 +386,8 @@ if ($step === 'process_import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                 $errMsg = "Unknown Error";
                 if (isset($data['error']) && $data['error']) {
                     $errMsg = $data['message'];
+                } else if (is_array($data)) {
+                    $errMsg = json_encode($data);
                 }
                 echo '<div class="alert alert-warning">API connection failed. Error: ' . htmlspecialchars($errMsg) . '</div>';
             }
@@ -390,7 +399,9 @@ if ($step === 'process_import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php if ($step === 'preview' && $import_id): ?>
         <?php
         $infoData = fetchAniwatch("/anime/" . urlencode($import_id));
-        if ($infoData && isset($infoData['success']) && $infoData['success']) {
+        $isSuccess = ($infoData && ((isset($infoData['success']) && $infoData['success']) || (isset($infoData['status']) && $infoData['status'] === 200)));
+
+        if ($isSuccess) {
             $anime = $infoData['data']['anime']['info'] ?? null;
             $more = $infoData['data']['anime']['moreInfo'] ?? null;
             if ($anime) {
