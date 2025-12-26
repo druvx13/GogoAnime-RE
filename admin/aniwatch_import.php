@@ -121,6 +121,24 @@ try {
     $msg_type = "danger";
 }
 
+function getOrCreateProvider($serverName, $label) {
+    global $conn;
+    $name = 'Aniwatch - ' . ucfirst($serverName);
+    try {
+        $stmt = $conn->prepare("SELECT id FROM video_providers WHERE name = ?");
+        $stmt->execute([$name]);
+        if($row = $stmt->fetch()) {
+            return $row['id'];
+        } else {
+            $stmt = $conn->prepare("INSERT INTO video_providers (name, label, is_active) VALUES (?, ?, 1)");
+            $stmt->execute([$name, $label]);
+            return $conn->lastInsertId();
+        }
+    } catch(PDOException $e) {
+        return 0;
+    }
+}
+
 $db_types = $conn->query("SELECT * FROM types")->fetchAll(PDO::FETCH_ASSOC);
 $db_genres = $conn->query("SELECT * FROM genres")->fetchAll(PDO::FETCH_ASSOC);
 
@@ -243,51 +261,55 @@ if ($step === 'process_import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                     // The docs say parameter is animeEpisodeId
                     $srvData = fetchAniwatch("/episode/servers?animeEpisodeId=" . urlencode($ep_id));
 
-                    // Prioritize servers: VidStreaming, MegaCloud, StreamTape...
                     // The API returns { sub: [...], dub: [...], raw: [...] }
-                    $serverList = $srvData['data']['sub'] ?? [];
+                    $allServers = $srvData['data']['sub'] ?? [];
+                    $selectedServers = $_POST['servers'] ?? [];
 
-                    // Sort servers by priority
-                    usort($serverList, function($a, $b) {
-                        $prio = ['vidstreaming', 'megacloud', 'hd-1', 'hd-2'];
-                        $aScore = 999;
-                        $bScore = 999;
-                        foreach($prio as $idx => $name) {
-                            if (stripos($a['serverName'], $name) !== false) { $aScore = $idx; break; }
+                    // If user didn't select any (or came from old form), default to priority list
+                    if (empty($selectedServers)) {
+                        $selectedServers = ['vidstreaming', 'megacloud', 'hd-1', 'hd-2'];
+                    }
+
+                    foreach ($allServers as $server) {
+                        $sName = $server['serverName'];
+
+                        // Only process if in user's selection (case-insensitive check)
+                        $isSelected = false;
+                        foreach($selectedServers as $sel) {
+                            if (strcasecmp($sel, $sName) === 0) {
+                                $isSelected = true;
+                                break;
+                            }
                         }
-                        foreach($prio as $idx => $name) {
-                            if (stripos($b['serverName'], $name) !== false) { $bScore = $idx; break; }
-                        }
-                        return $aScore <=> $bScore;
-                    });
+                        if (!$isSelected) continue;
 
-                    $final_link = '';
-
-                    // Iterate through servers until we find a working link
-                    foreach ($serverList as $server) {
-                        // Fetch Sources: /episode/sources?animeEpisodeId={id}&server={server}&category=sub
-                        $srcUrl = "/episode/sources?animeEpisodeId=" . urlencode($ep_id) . "&server=" . urlencode($server['serverName']) . "&category=sub";
+                        // Fetch Sources
+                        $srcUrl = "/episode/sources?animeEpisodeId=" . urlencode($ep_id) . "&server=" . urlencode($sName) . "&category=sub";
                         $srcData = fetchAniwatch($srcUrl);
 
-                        // Check if request was successful (status 200 or success: true)
                         $isSrcSuccess = ($srcData && ((isset($srcData['success']) && $srcData['success']) || (isset($srcData['status']) && $srcData['status'] === 200)));
 
+                        $videoUrl = '';
                         if ($isSrcSuccess && isset($srcData['data']['sources']) && is_array($srcData['data']['sources'])) {
                             foreach($srcData['data']['sources'] as $src) {
-                                // Prefer m3u8 or just take first
                                 if (isset($src['url'])) {
-                                    $final_link = $src['url'];
-                                    break 2; // Break both loops (sources and servers)
+                                    $videoUrl = $src['url'];
+                                    break;
                                 }
                             }
                         }
-                        // If failed, continue to next server
-                    }
 
-                    if ($final_link) {
-                         $vstmt = $conn->prepare("INSERT INTO episode_videos (episode_id, provider_id, video_url) VALUES (?, ?, ?)");
-                         $vstmt->execute([$local_ep_id, $aniwatch_provider_id, $final_link]);
-                         $conn->prepare("UPDATE episodes SET video_url = ? WHERE id = ?")->execute([$final_link, $local_ep_id]);
+                        if ($videoUrl) {
+                            $pid = getOrCreateProvider($sName, ucfirst($sName));
+                            if ($pid) {
+                                $vstmt = $conn->prepare("INSERT INTO episode_videos (episode_id, provider_id, video_url) VALUES (?, ?, ?)");
+                                $vstmt->execute([$local_ep_id, $pid, $videoUrl]);
+                            }
+
+                            // Also update the main episode video_url if it's the first valid one we found
+                            // (Legacy compatibility for themes that only use episodes.video_url)
+                            $conn->prepare("UPDATE episodes SET video_url = ? WHERE id = ? AND (video_url IS NULL OR video_url = '')")->execute([$videoUrl, $local_ep_id]);
+                        }
                     }
 
                     $imported_eps++;
@@ -465,9 +487,40 @@ if ($step === 'process_import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                                 Ready to import. This may take a while to fetch all episodes.
                             </div>
 
+                            <?php
+                            // Fetch first episode servers to populate checkboxes
+                            $servers = [];
+                            $epsData = fetchAniwatch("/anime/" . urlencode($import_id) . "/episodes");
+                            $firstEp = $epsData['data']['episodes'][0] ?? null;
+
+                            if ($firstEp) {
+                                $srvData = fetchAniwatch("/episode/servers?animeEpisodeId=" . urlencode($firstEp['episodeId']));
+                                $servers = $srvData['data']['sub'] ?? [];
+                            }
+                            ?>
+
                             <form method="POST" action="?step=process_import">
                                 <?php csrf_field(); ?>
                                 <input type="hidden" name="ani_id" value="<?=htmlspecialchars($import_id)?>">
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Select Video Sources (Servers) to Import:</label>
+                                    <div class="d-flex flex-wrap gap-3">
+                                        <?php if (!empty($servers)): ?>
+                                            <?php foreach ($servers as $srv): ?>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" name="servers[]" value="<?=htmlspecialchars($srv['serverName'])?>" id="srv_<?=htmlspecialchars($srv['serverName'])?>" checked>
+                                                    <label class="form-check-label" for="srv_<?=htmlspecialchars($srv['serverName'])?>">
+                                                        <?=htmlspecialchars(ucfirst($srv['serverName']))?>
+                                                    </label>
+                                                </div>
+                                            <?php endforeach; ?>
+                                        <?php else: ?>
+                                            <p class="text-muted small">No specific servers found for preview (will try auto-detection).</p>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+
                                 <div class="d-grid gap-2 d-md-block">
                                     <button type="submit" class="btn btn-success btn-lg px-5">
                                         <i class="fas fa-file-import"></i> Confirm Import
