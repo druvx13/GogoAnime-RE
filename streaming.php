@@ -149,7 +149,12 @@ if (!$hasSearched) {
     <link rel="canonical" href="<?=$base_url?><?php echo $_SERVER['REQUEST_URI'] ?>" />
     <link rel="alternate" hreflang="en-us" href="<?=$base_url?><?php echo $_SERVER['REQUEST_URI'] ?>" />
     <link rel="stylesheet" type="text/css" href="<?=$base_url?>/assets/css/style.css" />
+    <link href="<?=$base_url?>/assets/css/videojs/video-js.min.css" rel="stylesheet">
     <script type="text/javascript" src="<?=$base_url?>/assets/js/libraries/jquery.js"></script>
+    <script src="<?=$base_url?>/assets/js/videojs/video.min.js"></script>
+    <script src="<?=$base_url?>/assets/js/videojs/videojs-contrib-hls.min.js"></script>
+    <script src="<?=$base_url?>/assets/js/videojs/videojs-contrib-quality-levels.min.js"></script>
+    <script src="<?=$base_url?>/assets/js/videojs/videojs-hls-quality-selector.min.js"></script>
     <script>
         var base_url = 'https://' . document.domain . '/';
         var base_url_cdn_api = 'https://ajax.gogocdn.net/';
@@ -263,22 +268,29 @@ if (!$hasSearched) {
                                 <div class="anime_video_body_watch">
                                     <div id="load_anime">
                                         <div class="anime_video_body_watch_items load">
-                                             <div class="play-video" style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden;">
+                                             <div class="play-video" style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden; background:black;">
                                                 <?php
                                                 if ($selectedVideo) {
                                                     $url = $selectedVideo['video_url'];
                                                     $ext = strtolower(pathinfo($url, PATHINFO_EXTENSION));
-                                                    $is_direct = in_array($ext, ['mp4','mkv','webm','m3u8']) || (strpos($url, '/assets/uploads/') !== false);
-
-                                                    // Simple heuristic: if it contains an extension for video, it's direct.
-                                                    // Otherwise, if it's a URL, treat as iframe.
-                                                    // Also check for "Local" provider if we have that info, but checking URL is often enough.
+                                                    $is_m3u8 = ($ext === 'm3u8') || (strpos($url, '.m3u8') !== false);
+                                                    $is_direct = in_array($ext, ['mp4','mkv','webm']) || $is_m3u8 || (strpos($url, '/assets/uploads/') !== false);
 
                                                     if ($is_direct) {
-                                                        echo "<video controls style='position:absolute; top:0; left:0; width:100%; height:100%; background:black'>";
-                                                        echo "<source src='".htmlspecialchars($url)."' type='video/mp4'>";
-                                                        echo "Your browser does not support the video tag.";
-                                                        echo "</video>";
+                                                        // Use Video.js for direct video files, especially M3U8
+                                                        ?>
+                                                        <video id="my-video" class="video-js vjs-default-skin vjs-big-play-centered" controls preload="auto" style="position:absolute; top:0; left:0; width:100%; height:100%;" data-setup='{"fluid": true}'>
+                                                            <source src="<?=htmlspecialchars($url)?>" type="<?=$is_m3u8 ? 'application/x-mpegURL' : 'video/mp4'?>">
+                                                            <p class="vjs-no-js">
+                                                                To view this video please enable JavaScript, and consider upgrading to a web browser that
+                                                                <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
+                                                            </p>
+                                                        </video>
+                                                        <script>
+                                                            var player = videojs('my-video');
+                                                            player.hlsQualitySelector({ displayCurrentQuality: true });
+                                                        </script>
+                                                        <?php
                                                     } else {
                                                         echo "<iframe src='".htmlspecialchars($url)."' style='position:absolute; top:0; left:0; width:100%; height:100%; border:none;' allowfullscreen></iframe>";
                                                     }
