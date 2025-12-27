@@ -34,7 +34,6 @@ try {
 $error = '';
 $success = '';
 
-// Handle Actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['action'])) {
         if ($_POST['action'] === 'add') {
@@ -82,30 +81,28 @@ $apis = $conn->query("SELECT * FROM api_configs ORDER BY type, id ASC")->fetchAl
     <?php if($error): ?><div class="alert alert-danger"><?=$error?></div><?php endif; ?>
     <?php if($success): ?><div class="alert alert-success"><?=$success?></div><?php endif; ?>
 
-    <div class="card mb-4">
-        <div class="card-header">Add New API URL</div>
-        <div class="card-body">
-            <form method="POST" class="row g-3">
-                <?php csrf_field(); ?>
-                <input type="hidden" name="action" value="add">
-                <div class="col-md-3">
-                    <input type="text" name="name" class="form-control" placeholder="Name (e.g. Mirror 1)" required>
-                </div>
-                <div class="col-md-5">
-                    <input type="url" name="url" class="form-control" placeholder="https://api.example.com/api" required>
-                    <small class="text-muted">Include <code>/api</code> if required by the endpoint structure.</small>
-                </div>
-                <div class="col-md-2">
-                    <select name="type" class="form-select">
-                        <option value="zen">Zen-API</option>
-                        <option value="aniwatch">Aniwatch-API</option>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-primary w-100">Add</button>
-                </div>
-            </form>
-        </div>
+    <div class="card p-4 shadow-sm mb-4">
+        <h5>Add New API</h5>
+        <form method="POST" class="row g-3">
+            <?php csrf_field(); ?>
+            <input type="hidden" name="action" value="add">
+            <div class="col-md-3">
+                <input type="text" name="name" class="form-control" placeholder="Name (e.g. Mirror 1)" required>
+            </div>
+            <div class="col-md-5">
+                <input type="url" name="url" class="form-control" placeholder="https://api.example.com/api" required>
+                <small class="text-muted">Include <code>/api</code> if required by the endpoint structure.</small>
+            </div>
+            <div class="col-md-2">
+                <select name="type" class="form-select">
+                    <option value="zen">Zen-API</option>
+                    <option value="aniwatch">Aniwatch-API</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">Add</button>
+            </div>
+        </form>
     </div>
 
     <table class="table table-bordered table-striped">
@@ -130,7 +127,7 @@ $apis = $conn->query("SELECT * FROM api_configs ORDER BY type, id ASC")->fetchAl
                     <?php endif; ?>
                 </td>
                 <td><?=htmlspecialchars($api['name'])?></td>
-                <td><?=htmlspecialchars($api['url'])?></td>
+                <td><code><?=htmlspecialchars($api['url'])?></code></td>
                 <td>
                     <?php if(!$api['is_active']): ?>
                         <form method="POST" style="display:inline;">
@@ -155,5 +152,4 @@ $apis = $conn->query("SELECT * FROM api_configs ORDER BY type, id ASC")->fetchAl
         </tbody>
     </table>
 </div>
-
 <?php require_once 'layout/footer.php'; ?>

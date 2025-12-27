@@ -2,7 +2,7 @@
 require_once 'auth.php';
 require_once '../app/config/db.php';
 require_once 'layout/header.php';
-require_once 'import_helpers.php'; // Include shared helpers
+require_once 'import_helpers.php';
 
 // Increase execution time for large imports
 set_time_limit(300);
@@ -124,13 +124,10 @@ $db_genres = $conn->query("SELECT * FROM genres")->fetchAll(PDO::FETCH_ASSOC);
 
 if ($step === 'process_import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $zen_id = $_POST['zen_id'];
-    // We expect anime_data to be passed, or we fetch it if not present (legacy fallback)
+    $import_type = $_POST['import_type'] ?? 'sub';
     $animeData = isset($_POST['anime_data']) ? json_decode(htmlspecialchars_decode($_POST['anime_data']), true) : null;
-
-    // We expect videos to be passed from the Scan step: [ep_num => [ {server, link}, ... ]]
     $videos = $_POST['videos'] ?? [];
 
-    // 1. Fetch Details (Only if not passed)
     if (!$animeData) {
         $info = fetchZen("/info?id=" . urlencode($zen_id));
         if ($info && isset($info['success']) && $info['success']) {
@@ -139,37 +136,31 @@ if ($step === 'process_import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (empty($animeData)) {
-         $msg = "Invalid data received. Please re-scan.";
-         $msg_type = "danger";
-         $step = 'search';
+        $msg = "Invalid data received. Please re-scan.";
+        $msg_type = "danger";
+        $step = 'search';
     } else {
         $title = $animeData['title'];
-        $synopsis = '';
-        if (isset($animeData['animeInfo']['Overview'])) {
-            $synopsis = $animeData['animeInfo']['Overview'];
-        } elseif (isset($animeData['description'])) {
-            $synopsis = $animeData['description'];
-        }
-
+        $synopsis = $animeData['animeInfo']['Overview'] ?? $animeData['description'] ?? '';
         $poster_url = $animeData['poster'];
         $showType = $animeData['showType'] ?? 'TV';
         $statusRaw = $animeData['animeInfo']['Status'] ?? '';
         $releaseDate = $animeData['animeInfo']['Aired'] ?? '';
 
-        // 2. Duplicate Check
+        // Duplicate Check
         $check = $conn->prepare("SELECT id FROM anime WHERE title = ?");
         $check->execute([$title]);
         if ($existing = $check->fetch()) {
-            $msg = "Anime '$title' already exists (ID: {$existing['id']}). Import skipped.";
+            $msg = "Anime '$title' already exists. Import skipped.";
             $msg_type = "warning";
             $step = 'search';
         } else {
-            // 3. Download Cover
+            // Download Cover
             $local_image_name = downloadImage($poster_url, '../assets/uploads/covers/');
             $image_url = $local_image_name ? '/assets/uploads/covers/' . $local_image_name : '';
 
-            // 4. Map Type
-            $type_id = 1; // Default
+            // Map Type
+            $type_id = 1;
             $type_name = 'TV';
             foreach($db_types as $t) {
                 if (stripos($t['name'], $showType) !== false) {
@@ -179,16 +170,16 @@ if ($step === 'process_import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
 
-            // 5. Insert Anime
             $slug = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $title)));
             $final_status = mapStatus($statusRaw);
 
             try {
                 $conn->beginTransaction();
 
-                $stmt = $conn->prepare("INSERT INTO anime (title, slug, synopsis, type, type_id, status, release_date, image_url, language) VALUES (:title, :slug, :synopsis, :type, :type_id, :status, :release_date, :image_url, 'Sub')");
+                $stmt = $conn->prepare("INSERT INTO anime (title, slug, synopsis, type, type_id, status, release_date, image_url, language) VALUES (:title, :slug, :synopsis, :type, :type_id, :status, :release_date, :image_url, :language)");
                 $stmt->execute([
                     'title' => $title,
+                    'language' => ucfirst($import_type),
                     'slug' => $slug,
                     'synopsis' => $synopsis,
                     'type' => $type_name,
@@ -199,17 +190,11 @@ if ($step === 'process_import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                 ]);
                 $new_anime_id = $conn->lastInsertId();
 
-                // 6. Map and Insert Genres
+                // Genres
                 $zen_genres = $animeData['animeInfo']['Genres'] ?? [];
                 if (is_array($zen_genres)) {
                     foreach($zen_genres as $g) {
-                        $gName = '';
-                        if (is_array($g)) {
-                            $gName = $g['name'] ?? '';
-                        } else {
-                            $gName = (string)$g;
-                        }
-
+                        $gName = is_array($g) ? ($g['name'] ?? '') : (string)$g;
                         if (!$gName) continue;
 
                         $gid = null;
@@ -219,27 +204,22 @@ if ($step === 'process_import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                                 break;
                             }
                         }
-
                         if (!$gid) {
                             $gs = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $gName)));
-                            $cstmt = $conn->prepare("INSERT INTO genres (name, slug) VALUES (?, ?)");
-                            $cstmt->execute([$gName, $gs]);
+                            $conn->prepare("INSERT INTO genres (name, slug) VALUES (?, ?)")->execute([$gName, $gs]);
                             $gid = $conn->lastInsertId();
                             $db_genres[] = ['id' => $gid, 'name' => $gName];
                         }
-
                         $conn->prepare("INSERT INTO anime_genre (anime_id, genre_id) VALUES (?, ?)")->execute([$new_anime_id, $gid]);
                     }
                 }
 
                 $conn->commit();
 
-                // 7. Insert Episodes from Selected Videos
+                // Insert Episodes
                 $imported_eps = 0;
-
                 if (!empty($videos)) {
                     foreach ($videos as $ep_num => $video_sources) {
-                        // Insert Episode
                         $estmt = $conn->prepare("INSERT INTO episodes (anime_id, episode_number, title, video_url) VALUES (?, ?, ?, ?)");
                         $estmt->execute([$new_anime_id, $ep_num, "Episode $ep_num", ""]);
                         $local_ep_id = $conn->lastInsertId();
@@ -249,9 +229,9 @@ if ($step === 'process_import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                         foreach($video_sources as $json_src) {
                             $src = json_decode(htmlspecialchars_decode($json_src), true);
                             if ($src && isset($src['server']) && isset($src['link'])) {
-                                $provider_id = getOrCreateProvider($conn, 'Zen - ' . ucfirst($src['server']), ucfirst($src['server']));
+                                $pLabel = 'Zen - ' . ucfirst($src['server']);
+                                $provider_id = getOrCreateProvider($conn, $pLabel, $pLabel);
 
-                                // Insert Video Source
                                 $vstmt = $conn->prepare("INSERT INTO episode_videos (episode_id, provider_id, video_url) VALUES (?, ?, ?)");
                                 $vstmt->execute([$local_ep_id, $provider_id, $src['link']]);
 
@@ -259,11 +239,9 @@ if ($step === 'process_import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                             }
                         }
 
-                        // Update main episode link
                         if ($first_video_url) {
                             $conn->prepare("UPDATE episodes SET video_url = ? WHERE id = ?")->execute([$first_video_url, $local_ep_id]);
                         }
-
                         $imported_eps++;
                     }
                 }
@@ -333,10 +311,7 @@ if ($step === 'process_import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($data && isset($data['success']) && $data['success']) {
                 $results = $data['results'] ?? [];
 
-                // Fix for nested data structure in search results
-                if (isset($results['data']) && is_array($results['data'])) {
-                    $results = $results['data'];
-                }
+                if (isset($results['data']) && is_array($results['data'])) $results = $results['data'];
 
                 if (!empty($results)) {
                     ?>
@@ -459,11 +434,18 @@ if ($step === 'process_import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 
                                 <h5 class="mt-4"><i class="fas fa-filter"></i> Scan Options</h5>
                                 <div class="row g-3 mb-3">
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
+                                        <label class="form-label">Import Type</label>
+                                        <select name="import_type" class="form-select">
+                                            <option value="sub">Subtitled</option>
+                                            <option value="dub">Dubbed</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
                                         <label class="form-label">Episode Range (Start)</label>
                                         <input type="number" name="ep_start" class="form-control" value="1" min="1">
                                     </div>
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
                                         <label class="form-label">Episode Range (End)</label>
                                         <input type="number" name="ep_end" class="form-control" placeholder="Leave empty for all">
                                     </div>
@@ -496,46 +478,35 @@ if ($step === 'process_import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php if ($step === 'scan' && $_SERVER['REQUEST_METHOD'] === 'POST'): ?>
         <?php
         $zen_id = $_POST['zen_id'];
+        $import_type = $_POST['import_type'] ?? 'sub';
         $ep_start = max(1, intval($_POST['ep_start'] ?? 1));
         $ep_end = intval($_POST['ep_end'] ?? 0);
 
-        // Fetch basic info again for context
         $info = fetchZen("/info?id=" . urlencode($zen_id));
         $data = $info['results']['data'] ?? [];
         $title = $data['title'] ?? 'Unknown Anime';
-        $poster_url = $data['poster'] ?? '';
 
-        // Fetch Episodes
         $eps_data = fetchZen("/episodes/" . urlencode($zen_id));
-        $episodes = [];
-        if (isset($eps_data['results']['episodes'])) {
-            $episodes = $eps_data['results']['episodes'];
-        } elseif (isset($eps_data['results']) && is_array($eps_data['results'])) {
-             if (isset($eps_data['results'][0]['episodes'])) {
-                 $episodes = $eps_data['results'][0]['episodes'];
-             }
-        }
+        $episodes = $eps_data['results']['episodes'] ?? [];
+        if (empty($episodes) && isset($eps_data['results'][0]['episodes'])) $episodes = $eps_data['results'][0]['episodes'];
 
-        // Filter Episodes
         $filtered_eps = [];
         foreach($episodes as $ep) {
             $num = intval($ep['episode_no']);
-            if ($num >= $ep_start && ($ep_end === 0 || $num <= $ep_end)) {
-                $filtered_eps[] = $ep;
-            }
+            if ($num >= $ep_start && ($ep_end === 0 || $num <= $ep_end)) $filtered_eps[] = $ep;
         }
         ?>
 
         <div class="card shadow mb-4">
             <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-                <h4 class="mb-0">Scan Results: <?=htmlspecialchars($title)?></h4>
-                <span class="badge bg-secondary"><?=count($filtered_eps)?> Episodes Selected</span>
+                <h4 class="mb-0">Scan Results: <?=htmlspecialchars($title)?> <span class="badge bg-info"><?=strtoupper($import_type)?></span></h4>
+                <span class="badge bg-secondary"><?=count($filtered_eps)?> Episodes</span>
             </div>
             <div class="card-body">
                 <form method="POST" action="?step=process_import">
                     <?php csrf_field(); ?>
                     <input type="hidden" name="zen_id" value="<?=htmlspecialchars($zen_id)?>">
-                    <!-- Pass cached data to avoid re-fetching -->
+                    <input type="hidden" name="import_type" value="<?=htmlspecialchars($import_type)?>">
                     <input type="hidden" name="anime_data" value="<?=htmlspecialchars(json_encode($data))?>">
 
                     <div class="table-responsive">
@@ -543,15 +514,13 @@ if ($step === 'process_import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                             <thead>
                                 <tr>
                                     <th style="width: 80px;">Ep #</th>
-                                    <th>Available Streams (Select to Import)</th>
+                                    <th>Available Streams</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php foreach($filtered_eps as $ep):
                                     $ep_num = $ep['episode_no'];
                                     $ep_zen_id = $ep['id'];
-
-                                    // Fetch Servers
                                     $srvs = fetchZen("/servers/" . urlencode($ep_zen_id));
                                     $server_list = $srvs['results'] ?? [];
                                 ?>
@@ -563,27 +532,15 @@ if ($step === 'process_import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                                             if (is_array($server_list)) {
                                                 foreach($server_list as $server) {
                                                     $sName = $server['serverName'];
-
-                                                    // Construct ID and Fetch Link
                                                     $stream_id_param = $zen_id . "?ep=" . $ep_zen_id;
-                                                    $stream_url = "/stream?id=" . urlencode($stream_id_param) . "&server=" . urlencode($sName) . "&type=sub";
+                                                    $stream_url = "/stream?id=" . urlencode($stream_id_param) . "&server=" . urlencode($sName) . "&type=" . urlencode($import_type);
                                                     $stream_data = fetchZen($stream_url);
 
-                                                    $res = $stream_data['results'] ?? [];
                                                     $final_link = '';
-
-                                                    // Extract Link Logic (Shared)
-                                                    if (isset($res['streamingLink']) && is_array($res['streamingLink'])) {
-                                                         if (isset($res['streamingLink'][0]['link']['file'])) $final_link = $res['streamingLink'][0]['link']['file'];
-                                                    }
-                                                    if (!$final_link && isset($res['sources']) && is_array($res['sources'])) {
-                                                        if (isset($res['sources'][0]['file'])) $final_link = $res['sources'][0]['file'];
-                                                        if (!$final_link && isset($res['sources'][0]['url'])) $final_link = $res['sources'][0]['url'];
-                                                    }
-                                                    if (!$final_link && isset($res['link'])) {
-                                                        if (is_array($res['link']) && isset($res['link']['file'])) $final_link = $res['link']['file'];
-                                                        elseif (is_string($res['link'])) $final_link = $res['link'];
-                                                    }
+                                                    $res = $stream_data['results'] ?? [];
+                                                    if (isset($res['streamingLink'][0]['link']['file'])) $final_link = $res['streamingLink'][0]['link']['file'];
+                                                    elseif (isset($res['sources'][0]['file'])) $final_link = $res['sources'][0]['file'];
+                                                    elseif (isset($res['link']['file'])) $final_link = $res['link']['file'];
 
                                                     if ($final_link) {
                                                         $status = checkUrlStatus($final_link);
@@ -592,23 +549,15 @@ if ($step === 'process_import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                                                         ?>
                                                         <div class="border p-2 rounded bg-light" style="max-width: 300px;">
                                                             <div class="form-check">
-                                                                <input class="form-check-input server-chk" type="checkbox" name="videos[<?=$ep_num?>][]" value="<?=htmlspecialchars(json_encode(['server'=>$sName, 'link'=>$final_link]))?>" id="<?=$uniq?>" checked data-server="<?=htmlspecialchars($sName)?>">
-                                                                <label class="form-check-label fw-bold" for="<?=$uniq?>">
-                                                                    <?=htmlspecialchars(ucfirst($sName))?>
-                                                                </label>
+                                                                <input class="form-check-input server-chk" type="checkbox" name="videos[<?=$ep_num?>][]" value="<?=htmlspecialchars(json_encode(['server'=>$sName, 'link'=>$final_link]))?>" id="<?=$uniq?>" checked>
+                                                                <label class="form-check-label fw-bold" for="<?=$uniq?>"><?=htmlspecialchars(ucfirst($sName))?></label>
                                                             </div>
-                                                            <div class="mt-1 small text-truncate text-muted" title="<?=htmlspecialchars($final_link)?>">
-                                                                <i class="fas fa-link"></i> <?=htmlspecialchars($final_link)?>
-                                                            </div>
-                                                            <div class="mt-1">
-                                                                <span class="badge bg-<?=$color?>">HTTP <?=$status?></span>
-                                                            </div>
+                                                            <div class="mt-1 small text-truncate text-muted"><i class="fas fa-link"></i> <?=htmlspecialchars($final_link)?></div>
+                                                            <div class="mt-1"><span class="badge bg-<?=$color?>">HTTP <?=$status?></span></div>
                                                         </div>
                                                         <?php
                                                     }
                                                 }
-                                            } else {
-                                                echo '<span class="text-muted">No servers found.</span>';
                                             }
                                             ?>
                                         </div>
@@ -618,29 +567,11 @@ if ($step === 'process_import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                             </tbody>
                         </table>
                     </div>
-
-                    <div class="sticky-bottom bg-white border-top p-3 d-flex justify-content-between align-items-center shadow">
-                        <div>
-                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleAll(true)">Select All</button>
-                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleAll(false)">Deselect All</button>
-                        </div>
-                        <div>
-                            <button type="submit" class="btn btn-success btn-lg">
-                                <i class="fas fa-file-import"></i> Finalize Import
-                            </button>
-                        </div>
-                    </div>
+                    <div class="d-grid mt-3"><button type="submit" class="btn btn-success btn-lg">Finalize Import</button></div>
                 </form>
             </div>
         </div>
-
-        <script>
-        function toggleAll(state) {
-            document.querySelectorAll('.server-chk').forEach(el => el.checked = state);
-        }
-        </script>
     <?php endif; ?>
-
 </div>
 
 <style>
