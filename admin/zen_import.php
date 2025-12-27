@@ -147,34 +147,38 @@ if ($step === 'process_import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $statusRaw = $animeData['animeInfo']['Status'] ?? '';
         $releaseDate = $animeData['animeInfo']['Aired'] ?? '';
 
-        // Duplicate Check
+        // Duplicate Check & Upsert Logic
         $check = $conn->prepare("SELECT id FROM anime WHERE title = ?");
         $check->execute([$title]);
-        if ($existing = $check->fetch()) {
-            $msg = "Anime '$title' already exists. Import skipped.";
-            $msg_type = "warning";
-            $step = 'search';
-        } else {
-            // Download Cover
-            $local_image_name = downloadImage($poster_url, '../assets/uploads/covers/');
-            $image_url = $local_image_name ? '/assets/uploads/covers/' . $local_image_name : '';
+        $existing = $check->fetch();
 
-            // Map Type
-            $type_id = 1;
-            $type_name = 'TV';
-            foreach($db_types as $t) {
-                if (stripos($t['name'], $showType) !== false) {
-                    $type_id = $t['id'];
-                    $type_name = $t['name'];
-                    break;
+        $final_anime_id = 0;
+        $action_msg = "";
+
+        try {
+            $conn->beginTransaction();
+
+            if ($existing) {
+                $final_anime_id = $existing['id'];
+                $action_msg = "Updated existing anime";
+            } else {
+                // Download Cover
+                $local_image_name = downloadImage($poster_url, '../assets/uploads/covers/');
+                $image_url = $local_image_name ? '/assets/uploads/covers/' . $local_image_name : '';
+
+                // Map Type
+                $type_id = 1;
+                $type_name = 'TV';
+                foreach($db_types as $t) {
+                    if (stripos($t['name'], $showType) !== false) {
+                        $type_id = $t['id'];
+                        $type_name = $t['name'];
+                        break;
+                    }
                 }
-            }
 
-            $slug = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $title)));
-            $final_status = mapStatus($statusRaw);
-
-            try {
-                $conn->beginTransaction();
+                $slug = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $title)));
+                $final_status = mapStatus($statusRaw);
 
                 $stmt = $conn->prepare("INSERT INTO anime (title, slug, synopsis, type, type_id, status, release_date, image_url, language) VALUES (:title, :slug, :synopsis, :type, :type_id, :status, :release_date, :image_url, :language)");
                 $stmt->execute([
@@ -188,7 +192,7 @@ if ($step === 'process_import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                     'release_date' => $releaseDate,
                     'image_url' => $image_url
                 ]);
-                $new_anime_id = $conn->lastInsertId();
+                $final_anime_id = $conn->lastInsertId();
 
                 // Genres
                 $zen_genres = $animeData['animeInfo']['Genres'] ?? [];
@@ -206,59 +210,86 @@ if ($step === 'process_import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                         }
                         if (!$gid) {
                             $gs = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $gName)));
-                            $conn->prepare("INSERT INTO genres (name, slug) VALUES (?, ?)")->execute([$gName, $gs]);
+                            $cstmt = $conn->prepare("INSERT INTO genres (name, slug) VALUES (?, ?)");
+                            $cstmt->execute([$gName, $gs]);
                             $gid = $conn->lastInsertId();
                             $db_genres[] = ['id' => $gid, 'name' => $gName];
                         }
-                        $conn->prepare("INSERT INTO anime_genre (anime_id, genre_id) VALUES (?, ?)")->execute([$new_anime_id, $gid]);
+                        $conn->prepare("INSERT INTO anime_genre (anime_id, genre_id) VALUES (?, ?)")->execute([$final_anime_id, $gid]);
                     }
                 }
+                $action_msg = "Created new anime";
+            }
 
-                $conn->commit();
+            // Insert/Update Episodes
+            $imported_eps = 0;
+            if (!empty($videos)) {
+                foreach ($videos as $ep_num => $video_sources) {
+                    $local_ep_id = 0;
 
-                // Insert Episodes
-                $imported_eps = 0;
-                if (!empty($videos)) {
-                    foreach ($videos as $ep_num => $video_sources) {
+                    // Check if episode exists
+                    $ep_check = $conn->prepare("SELECT id, video_url FROM episodes WHERE anime_id = ? AND episode_number = ?");
+                    $ep_check->execute([$final_anime_id, $ep_num]);
+                    $ep_row = $ep_check->fetch();
+
+                    if ($ep_row) {
+                        $local_ep_id = $ep_row['id'];
+                    } else {
                         $estmt = $conn->prepare("INSERT INTO episodes (anime_id, episode_number, title, video_url) VALUES (?, ?, ?, ?)");
-                        $estmt->execute([$new_anime_id, $ep_num, "Episode $ep_num", ""]);
+                        $estmt->execute([$final_anime_id, $ep_num, "Episode $ep_num", ""]);
                         $local_ep_id = $conn->lastInsertId();
+                    }
 
-                        $first_video_url = '';
+                    $first_video_url = '';
 
-                        foreach($video_sources as $json_src) {
-                            $src = json_decode(htmlspecialchars_decode($json_src), true);
-                            if ($src && isset($src['server']) && isset($src['link'])) {
-                                $pLabel = 'Zen - ' . ucfirst($src['server']);
-                                $provider_id = getOrCreateProvider($conn, $pLabel, $pLabel);
+                    foreach($video_sources as $json_src) {
+                        $src = json_decode(htmlspecialchars_decode($json_src), true);
+                        if ($src && isset($src['server']) && isset($src['link'])) {
+                            $pLabel = 'Zen - ' . ucfirst($src['server']);
+                            $provider_id = getOrCreateProvider($conn, $pLabel, $pLabel);
 
+                            // Check duplication
+                            $vcheck = $conn->prepare("SELECT id FROM episode_videos WHERE episode_id = ? AND provider_id = ?");
+                            $vcheck->execute([$local_ep_id, $provider_id]);
+
+                            if ($vcheck->fetch()) {
+                                // Update
+                                $vstmt = $conn->prepare("UPDATE episode_videos SET video_url = ? WHERE episode_id = ? AND provider_id = ?");
+                                $vstmt->execute([$src['link'], $local_ep_id, $provider_id]);
+                            } else {
+                                // Insert
                                 $vstmt = $conn->prepare("INSERT INTO episode_videos (episode_id, provider_id, video_url) VALUES (?, ?, ?)");
                                 $vstmt->execute([$local_ep_id, $provider_id, $src['link']]);
-
-                                if (!$first_video_url) $first_video_url = $src['link'];
                             }
-                        }
 
-                        if ($first_video_url) {
+                            if (!$first_video_url) $first_video_url = $src['link'];
+                        }
+                    }
+
+                    // Update main episode link if empty or we have a new one (prioritize if needed, but for now just ensure it has one)
+                    if ($first_video_url) {
+                        // Let's overwrite if existing is empty
+                        if (!$ep_row || empty($ep_row['video_url'])) {
                             $conn->prepare("UPDATE episodes SET video_url = ? WHERE id = ?")->execute([$first_video_url, $local_ep_id]);
                         }
-                        $imported_eps++;
                     }
+                    $imported_eps++;
                 }
-
-                $msg = "Import Successful! Added '<strong>$title</strong>' with $imported_eps episodes.";
-                $msg_type = "success";
-                $step = 'search';
-
-            } catch (Exception $e) {
-                if ($conn->inTransaction()) $conn->rollBack();
-                if ($local_image_name && file_exists('../assets/uploads/covers/' . $local_image_name)) {
-                    unlink('../assets/uploads/covers/' . $local_image_name);
-                }
-                $msg = "Import failed: " . $e->getMessage();
-                $msg_type = "danger";
-                $step = 'search';
             }
+
+            $conn->commit();
+            $msg = "$action_msg '<strong>$title</strong>'. Processed $imported_eps episodes.";
+            $msg_type = "success";
+            $step = 'search';
+
+        } catch (Exception $e) {
+            if ($conn->inTransaction()) $conn->rollBack();
+            if (isset($local_image_name) && file_exists('../assets/uploads/covers/' . $local_image_name)) {
+                unlink('../assets/uploads/covers/' . $local_image_name);
+            }
+            $msg = "Import failed: " . $e->getMessage();
+            $msg_type = "danger";
+            $step = 'search';
         }
     }
 }
