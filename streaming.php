@@ -149,12 +149,10 @@ if (!$hasSearched) {
     <link rel="canonical" href="<?=$base_url?><?php echo $_SERVER['REQUEST_URI'] ?>" />
     <link rel="alternate" hreflang="en-us" href="<?=$base_url?><?php echo $_SERVER['REQUEST_URI'] ?>" />
     <link rel="stylesheet" type="text/css" href="<?=$base_url?>/assets/css/style.css" />
-    <link href="<?=$base_url?>/assets/css/videojs/video-js.min.css" rel="stylesheet">
+    <link href="<?=$base_url?>/assets/css/plyr/plyr.css" rel="stylesheet">
     <script type="text/javascript" src="<?=$base_url?>/assets/js/libraries/jquery.js"></script>
-    <script src="<?=$base_url?>/assets/js/videojs/video.min.js"></script>
-    <script src="<?=$base_url?>/assets/js/videojs/videojs-contrib-hls.min.js"></script>
-    <script src="<?=$base_url?>/assets/js/videojs/videojs-contrib-quality-levels.min.js"></script>
-    <script src="<?=$base_url?>/assets/js/videojs/videojs-hls-quality-selector.min.js"></script>
+    <script src="<?=$base_url?>/assets/js/plyr/plyr.js"></script>
+    <script src="<?=$base_url?>/assets/js/hls.js"></script>
     <script>
         var base_url = 'https://' . document.domain . '/';
         var base_url_cdn_api = 'https://ajax.gogocdn.net/';
@@ -277,18 +275,58 @@ if (!$hasSearched) {
                                                     $is_direct = in_array($ext, ['mp4','mkv','webm']) || $is_m3u8 || (strpos($url, '/assets/uploads/') !== false);
 
                                                     if ($is_direct) {
-                                                        // Use Video.js for direct video files, especially M3U8
                                                         ?>
-                                                        <video id="my-video" class="video-js vjs-default-skin vjs-big-play-centered" controls preload="auto" style="position:absolute; top:0; left:0; width:100%; height:100%;" data-setup='{"fluid": true}'>
-                                                            <source src="<?=htmlspecialchars($url)?>" type="<?=$is_m3u8 ? 'application/x-mpegURL' : 'video/mp4'?>">
-                                                            <p class="vjs-no-js">
-                                                                To view this video please enable JavaScript, and consider upgrading to a web browser that
-                                                                <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
-                                                            </p>
+                                                        <video id="player" controls crossorigin playsinline style="position:absolute; top:0; left:0; width:100%; height:100%;">
+                                                            <?php if(!$is_m3u8): ?>
+                                                                <source src="<?=htmlspecialchars($url)?>" type="video/mp4" />
+                                                            <?php endif; ?>
                                                         </video>
                                                         <script>
-                                                            var player = videojs('my-video');
-                                                            player.hlsQualitySelector({ displayCurrentQuality: true });
+                                                            document.addEventListener('DOMContentLoaded', () => {
+                                                                const source = '<?=htmlspecialchars($url)?>';
+                                                                const video = document.getElementById('player');
+
+                                                                const defaultOptions = {
+                                                                    controls: ['play-large', 'play', 'progress', 'current-time', 'mute', 'volume', 'captions', 'settings', 'pip', 'airplay', 'fullscreen'],
+                                                                    settings: ['quality', 'speed']
+                                                                };
+
+                                                                if (Hls.isSupported() && (source.includes('.m3u8'))) {
+                                                                    const hls = new Hls();
+                                                                    hls.loadSource(source);
+
+                                                                    hls.on(Hls.Events.MANIFEST_PARSED, function (event, data) {
+                                                                        const availableQualities = hls.levels.map((l) => l.height);
+
+                                                                        // Initialize Plyr
+                                                                        const player = new Plyr(video, {
+                                                                            ...defaultOptions,
+                                                                            quality: {
+                                                                                default: availableQualities[0],
+                                                                                options: availableQualities,
+                                                                                forced: true,
+                                                                                onChange: (e) => updateQuality(e),
+                                                                            }
+                                                                        });
+                                                                    });
+
+                                                                    hls.attachMedia(video);
+                                                                    window.hls = hls;
+
+                                                                    // Handle quality changes
+                                                                    function updateQuality(newQuality) {
+                                                                        if (newQuality === 0) return; // 'Auto' handling if needed
+                                                                        window.hls.levels.forEach((level, levelIndex) => {
+                                                                            if (level.height === newQuality) {
+                                                                                window.hls.currentLevel = levelIndex;
+                                                                            }
+                                                                        });
+                                                                    }
+                                                                } else {
+                                                                    // Default HTML5 Player fallback (e.g. for MP4)
+                                                                    const player = new Plyr(video, defaultOptions);
+                                                                }
+                                                            });
                                                         </script>
                                                         <?php
                                                     } else {
