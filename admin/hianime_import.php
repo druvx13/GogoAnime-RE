@@ -20,7 +20,7 @@ function getActiveHianimeUrl() {
     } catch (PDOException $e) {
         // Fallback
     }
-    return "http://localhost:3030/api/v1"; // Default based on repo docs
+    return "https://hianime-api-js0d.onrender.com/api/v1";
 }
 
 function fetchHianime($endpoint) {
@@ -47,7 +47,7 @@ function fetchHianime($endpoint) {
     curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
     curl_setopt($ch, CURLOPT_USERAGENT, 'HianimeImporter/1.0');
-    curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
     $data = curl_exec($ch);
     $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $error = curl_error($ch);
@@ -134,7 +134,7 @@ if ($step === 'process_import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$animeData) {
         $infoData = fetchHianime("/anime/" . urlencode($hi_id));
         if ($infoData && isset($infoData['success']) && $infoData['success']) {
-            $animeData = $infoData['data']['anime'] ?? $infoData['data']; // Adjust based on actual response structure
+            $animeData = $infoData['data']['anime'] ?? $infoData['data'];
         }
     }
 
@@ -143,8 +143,8 @@ if ($step === 'process_import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $msg_type = "danger";
         $step = 'search';
     } else {
-        // Map fields based on infoExtract from the repo
-        // The object has: title, japanese, synopsis, type, status, aired.from, etc.
+        // Map fields based on confirmed API structure
+        // The object has: title, synopsis, type, status, aired.from, etc.
         $info = $animeData['info'] ?? $animeData;
 
         $title = $info['title'] ?? $info['name'] ?? 'Unknown';
@@ -153,7 +153,6 @@ if ($step === 'process_import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $showType = $info['type'] ?? 'TV';
         $statusRaw = $info['status'] ?? 'Completed';
 
-        // Handling dates is tricky with this API structure (aired object)
         $releaseDate = '';
         if (isset($info['aired']) && is_array($info['aired'])) {
             $releaseDate = $info['aired']['from'] ?? '';
@@ -326,8 +325,11 @@ if ($step === 'process_import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($keyword) {
             $data = fetchHianime("/search?keyword=" . urlencode($keyword));
 
+            // API returns: data: { response: [...] } or data: { animes: [...] } ?
+            // Based on curl: data.data.response is the array of animes
             if ($data && isset($data['success']) && $data['success']) {
-                $results = $data['data']['animes'] ?? [];
+                $results = $data['data']['animes'] ?? $data['data']['response'] ?? [];
+
                 if (!empty($results)) {
                     ?>
                     <h4 class="mb-3">Search Results for "<?=htmlspecialchars($keyword)?>"</h4>
@@ -336,10 +338,10 @@ if ($step === 'process_import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="col">
                             <div class="card h-100 shadow-sm">
                                 <div style="height: 300px; overflow: hidden; background: #000;">
-                                    <img src="<?=$item['poster']?>" class="card-img-top" style="height: 100%; object-fit: cover; opacity: 0.9;" alt="<?=$item['name']?>">
+                                    <img src="<?=$item['poster']?>" class="card-img-top" style="height: 100%; object-fit: cover; opacity: 0.9;" alt="<?=$item['title']?>">
                                 </div>
                                 <div class="card-body d-flex flex-column">
-                                    <h5 class="card-title text-truncate" title="<?=$item['name']?>"><?=$item['name']?></h5>
+                                    <h5 class="card-title text-truncate" title="<?=$item['title']?>"><?=$item['title']?></h5>
                                     <div class="mb-3">
                                         <span class="badge bg-secondary"><?=$item['type'] ?? 'TV'?></span>
                                         <span class="badge bg-info text-dark">Ep: <?=$item['episodes']['sub'] ?? '?'?></span>
@@ -391,11 +393,19 @@ if ($step === 'process_import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $infoData = fetchHianime("/anime/" . urlencode($import_id));
 
         if ($infoData && isset($infoData['success']) && $infoData['success']) {
-            $anime = $infoData['data']['anime']['info'] ?? $infoData['data']['anime'] ?? null;
-            // Sometimes it's directly in data or data.anime.info based on repo code inspection which showed infoExtract returns the obj
+            $anime = $infoData['data']['anime']['info'] ?? $infoData['data']['anime'] ?? $infoData['data'] ?? null;
+            // Curl shows: { success: true, data: { title: "...", ... } } -> So it's data directly
 
             if ($anime) {
-                $more = $infoData['data']['moreInfo'] ?? []; // Fallback
+                // Determine release date string
+                $aired = 'N/A';
+                if (isset($anime['aired']['from'])) {
+                     $aired = $anime['aired']['from'];
+                     if (isset($anime['aired']['to'])) $aired .= ' to ' . $anime['aired']['to'];
+                } elseif (isset($anime['aired'])) {
+                     $aired = $anime['aired'];
+                }
+
             ?>
             <div class="card shadow-lg mt-3">
                 <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
@@ -411,7 +421,7 @@ if ($step === 'process_import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                             <h2 class="mb-3"><?=$anime['name'] ?? $anime['title']?></h2>
                             <table class="table table-sm table-borderless">
                                 <tr><th width="150">Status:</th><td><?=$anime['status'] ?? 'Unknown'?></td></tr>
-                                <tr><th>Aired:</th><td><?=$anime['aired']['from'] ?? $anime['aired'] ?? 'N/A'?></td></tr>
+                                <tr><th>Aired:</th><td><?=$aired?></td></tr>
                                 <tr><th>Genres:</th><td><?=implode(', ', $anime['genres'] ?? [])?></td></tr>
                                 <tr><th>ID:</th><td><code><?=$anime['id']?></code></td></tr>
                             </table>
@@ -463,8 +473,6 @@ if ($step === 'process_import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php
             } else {
                 echo '<div class="alert alert-danger">Invalid data received from API. Structure mismatch.</div>';
-                // Debug output
-                // echo '<pre>'; print_r($infoData); echo '</pre>';
             }
         } else {
             echo '<div class="alert alert-danger">Failed to fetch details. API Error.</div>';
@@ -482,17 +490,19 @@ if ($step === 'process_import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Fetch context
         $infoData = fetchHianime("/anime/" . urlencode($hi_id));
-        $anime = $infoData['data']['anime']['info'] ?? $infoData['data']['anime'] ?? [];
+        $anime = $infoData['data']['anime']['info'] ?? $infoData['data']['anime'] ?? $infoData['data'] ?? [];
         $title = $anime['name'] ?? $anime['title'] ?? 'Unknown Anime';
 
         // Fetch Episodes
+        // Verified endpoint: /episodes/{id}
         $epsData = fetchHianime("/episodes/" . urlencode($hi_id));
-        $episodes = $epsData['data']['episodes'] ?? [];
+        // Verified response: data: [{ ... }, ...] (Direct array of episodes)
+        $episodes = $epsData['data']['episodes'] ?? $epsData['data'] ?? [];
 
         // Filter
         $filtered_eps = [];
         foreach($episodes as $ep) {
-            $num = intval($ep['number']);
+            $num = intval($ep['number'] ?? $ep['episodeNumber']);
             if ($num >= $ep_start && ($ep_end === 0 || $num <= $ep_end)) {
                 $filtered_eps[] = $ep;
             }
@@ -521,29 +531,20 @@ if ($step === 'process_import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                             </thead>
                             <tbody>
                                 <?php foreach($filtered_eps as $ep):
-                                    $ep_num = $ep['number'];
-                                    $ep_id = $ep['episodeId'];
+                                    $ep_num = $ep['number'] ?? $ep['episodeNumber'];
+                                    $ep_id = $ep['episodeId'] ?? $ep['id'];
 
                                     // Fetch Servers
-                                    $srvData = fetchHianime("/servers?episodeId=" . urlencode($ep_id)); // Check param name. Repo says /servers?id={episodeId}
-                                    if (empty($srvData['data'])) {
-                                         // Retry with 'id' if 'episodeId' failed, though docs said id={episodeId}
-                                         $srvData = fetchHianime("/servers?id=" . urlencode($ep_id));
-                                    }
+                                    // Verified endpoint: /servers/{id} or /servers/{episodeId}
+                                    // My test curl to /servers?id=... FAILED
+                                    // My test curl to /servers/id SUCCEEDED! -> /servers/naruto-677::ep=12352
 
-                                    // The servers endpoint typically returns data: { sub: [], dub: [], raw: [] } or just an array
-                                    // Based on repo info, it seems to be an array of objects which contain 'type' or segregated keys?
-                                    // Let's assume segregated keys 'sub', 'dub' like Aniwatch since it's "hianime"
+                                    $srvData = fetchHianime("/servers/" . urlencode($ep_id));
 
+                                    // Valid response: data: { sub: [...], dub: [...] }
                                     $server_list = [];
                                     if (isset($srvData['data'][$import_type])) {
                                         $server_list = $srvData['data'][$import_type];
-                                    } elseif (isset($srvData['data']) && is_array($srvData['data'])) {
-                                        // Maybe it's a flat list with a type property?
-                                        foreach($srvData['data'] as $s) {
-                                            // Fallback if structure is different
-                                            $server_list[] = $s;
-                                        }
                                     }
                                 ?>
                                 <tr>
@@ -553,26 +554,19 @@ if ($step === 'process_import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                                             <?php
                                             if (!empty($server_list)) {
                                                 foreach($server_list as $server) {
-                                                    $sName = $server['serverName'];
+                                                    $sName = $server['name'] ?? $server['serverName']; // API uses 'name'
 
                                                     // Fetch Link
-                                                    // Docs: /stream?id={episodeId}&server={server}&type={sub|dub}
+                                                    // Verified endpoint: /stream?id={episodeId}&server={server}&type={sub|dub}
                                                     $srcUrl = "/stream?id=" . urlencode($ep_id) . "&server=" . urlencode($sName) . "&type=" . urlencode($import_type);
                                                     $srcData = fetchHianime($srcUrl);
 
                                                     $final_link = '';
-                                                    // Response: data: { sources: [{url: "..."}] }
-                                                    if (isset($srcData['data']['sources']) && is_array($srcData['data']['sources'])) {
-                                                        foreach($srcData['data']['sources'] as $src) {
-                                                            if (isset($src['url'])) {
-                                                                $final_link = $src['url'];
-                                                                break;
-                                                            }
-                                                        }
-                                                    }
-                                                    // Or maybe just 'link'?
-                                                    if (!$final_link && isset($srcData['data']['link'])) {
-                                                        $final_link = $srcData['data']['link']['file'] ?? $srcData['data']['link'];
+                                                    // Verified response: data: { link: { file: "..." } }
+                                                    if (isset($srcData['data']['link']['file'])) {
+                                                        $final_link = $srcData['data']['link']['file'];
+                                                    } elseif (isset($srcData['data']['sources'][0]['url'])) {
+                                                        $final_link = $srcData['data']['sources'][0]['url'];
                                                     }
 
                                                     if ($final_link) {
