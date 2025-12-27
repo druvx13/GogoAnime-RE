@@ -24,44 +24,56 @@ function getActiveHianimeUrl() {
 }
 
 function fetchHianime($endpoint) {
-    // Basic rate limiting
-    usleep(200000); // 200ms
+    // Basic rate limiting - Increased to avoid 429
+    usleep(500000); // 500ms initial delay
 
     $base_url = getActiveHianimeUrl();
-
-    // Normalize base URL
     $base_url = rtrim($base_url, '/');
-
-    // Auto-append path if missing and not already there
-    // The repo docs say /api/v1 is the base.
     if (strpos($base_url, '/api/v1') === false) {
         $base_url .= '/api/v1';
     }
 
     $url = $base_url . '/' . ltrim($endpoint, '/');
+    $retries = 3;
+    $attempt = 0;
 
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
-    curl_setopt($ch, CURLOPT_USERAGENT, 'HianimeImporter/1.0');
-    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-    $data = curl_exec($ch);
-    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $error = curl_error($ch);
-    curl_close($ch);
+    while ($attempt < $retries) {
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+        curl_setopt($ch, CURLOPT_USERAGENT, 'HianimeImporter/1.1');
+        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+        $data = curl_exec($ch);
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error = curl_error($ch);
+        curl_close($ch);
 
-    if ($http_code != 200 || $error) {
-        error_log("Hianime API Error [$http_code]: $error - URL: $url");
-        return ['error' => true, 'message' => "HTTP $http_code: $error"];
+        // Success Case
+        if ($http_code == 200 && !$error) {
+            $decoded = json_decode($data, true);
+            if ($decoded) {
+                return $decoded;
+            }
+        }
+
+        // Handle 429 (Too Many Requests) specifically
+        if ($http_code == 429) {
+            $sleepTime = ($attempt + 1) * 2; // Backoff: 2s, 4s, 6s
+            error_log("Hianime API 429 Limit Hit. Retrying in {$sleepTime}s... URL: $url");
+            sleep($sleepTime);
+        } else {
+            // Other errors, short wait
+            usleep(500000);
+        }
+
+        $attempt++;
     }
-    $decoded = json_decode($data, true);
-    if (!$decoded) {
-        return ['error' => true, 'message' => "Invalid JSON Response"];
-    }
-    return $decoded;
+
+    error_log("Hianime API Failed after $retries attempts. Last Code: $http_code - URL: $url");
+    return ['error' => true, 'message' => "HTTP $http_code: $error"];
 }
 
 function downloadImage($url, $save_dir) {
