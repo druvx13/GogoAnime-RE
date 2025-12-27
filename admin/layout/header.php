@@ -33,6 +33,7 @@
         <a href="/admin/google_config.php"><i class="fas fa-g"></i> Google Config</a>
         <a href="/admin/zen_import.php"><i class="fas fa-cloud-download-alt"></i> Zen-API Import</a>
         <a href="/admin/aniwatch_import.php"><i class="fas fa-file-import"></i> Aniwatch Import</a>
+        <a href="/admin/hianime_import.php"><i class="fas fa-file-import"></i> Hianime Import</a>
         <a href="/admin/api_config.php"><i class="fas fa-cogs"></i> API Config</a>
         <a href="/admin/logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>

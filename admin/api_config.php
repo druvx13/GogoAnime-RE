@@ -97,6 +97,7 @@ $apis = $conn->query("SELECT * FROM api_configs ORDER BY type, id ASC")->fetchAl
                 <select name="type" class="form-select">
                     <option value="zen">Zen-API</option>
                     <option value="aniwatch">Aniwatch-API</option>
+                    <option value="hianime">Hianime-API</option>
                 </select>
             </div>
             <div class="col-md-2">
