@@ -110,11 +110,8 @@ if (!$hasSearched) {
 
                                             $totalPages = ceil($total / $limit);
 
-                                            for ($i = 1; $i <= $totalPages; $i++) {
-                                                 if ($i > 10 && $i != $totalPages && $i != $page) continue;
-                                                 $active = ($i == $page) ? 'selected' : '';
-                                                 echo "<li class='$active'><a href='?char=$char&page=$i'>$i</a></li>";
-                                            }
+                                            require_once('./app/helpers/pagination_helper.php');
+                                            echo PaginationHelper::render($page, $totalPages, ['char' => $char]);
                                             ?>
                                         </ul>
                                     </div>
