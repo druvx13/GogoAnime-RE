@@ -55,6 +55,14 @@ if (!$hasSearched) {
     $stmt->execute(['anime_id' => $id]);
     $episodes = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+    // Check Bookmark Status
+    $isBookmarked = false;
+    if(isset($_SESSION['user_id'])) {
+        $bmStmt = $conn->prepare("SELECT id FROM bookmarks WHERE user_id = :uid AND anime_id = :aid");
+        $bmStmt->execute(['uid' => $_SESSION['user_id'], 'aid' => $id]);
+        $isBookmarked = (bool)$bmStmt->fetch();
+    }
+
     // Map DB fields for template usage
     $fetchDetails = [
         'name' => htmlspecialchars($anime['title']),
@@ -147,7 +155,17 @@ if (!$hasSearched) {
                 <div class="anime_info_body_bg">
                   <img src="<?=$fetchDetails['imageUrl']?>" alt="<?=$fetchDetails['name']?>">
                   <h1><?=$fetchDetails['name']?></h1>
-                  <p class="type"><span>Type: </span><?=$fetchDetails['type']?></p>
+                  <p class="type"><span>Type: </span><?=$fetchDetails['type']?>
+                    <?php if(isset($_SESSION['user_id'])): ?>
+                        <a href="javascript:void(0)" id="btn-bookmark" onclick="toggleBookmark(<?=$id?>)" title="<?=$isBookmarked ? 'Remove Bookmark' : 'Bookmark this Anime'?>" style="margin-left: 10px; display: inline-block; vertical-align: middle;">
+                            <img src="<?=$base_url?>/assets/img/<?=$isBookmarked ? 'bookmart-remove.png' : 'bookmart-add.png'?>" alt="Bookmark" style="width: 13px !important; height: 13px !important; float: none !important; padding: 0 !important; margin: 0 !important; border: 0 !important; display: block !important;" />
+                        </a>
+                    <?php else: ?>
+                        <a href="/login.html" title="Login to bookmark" style="margin-left: 10px; display: inline-block; vertical-align: middle;">
+                            <img src="<?=$base_url?>/assets/img/bookmart-add.png" alt="Bookmark" style="width: 13px !important; height: 13px !important; float: none !important; padding: 0 !important; margin: 0 !important; border: 0 !important; display: block !important;" />
+                        </a>
+                    <?php endif; ?>
+                  </p>
                   <p class="type"><span>Plot Summary: </span><?=$fetchDetails['synopsis']?></p>
                   <p class="type"><span>Genre: </span> 
                     <?php
@@ -168,22 +186,6 @@ if (!$hasSearched) {
                     <a href="<?php if ($fetchDetails['status'] == 'Completed') {echo "/status/completed"; } else {echo "/status/ongoing";} ?>" title="<?=$fetchDetails['status']?> Anime"><?=$fetchDetails['status']?></a>
                   </p>
                   <p class="type"><span>Language: </span><?=$fetchDetails['language']?></p>
-
-                  <!-- Bookmark Feature -->
-                  <div class="bookmark-section" style="margin-top: 15px;">
-                      <?php if(isset($_SESSION['user_id'])):
-                          // Check if already bookmarked
-                          $bmStmt = $conn->prepare("SELECT id FROM bookmarks WHERE user_id = :uid AND anime_id = :aid");
-                          $bmStmt->execute(['uid' => $_SESSION['user_id'], 'aid' => $id]);
-                          $isBookmarked = $bmStmt->fetch();
-                      ?>
-                          <button id="btn-bookmark" class="btn btn-warning" onclick="toggleBookmark(<?=$id?>)" style="background:#ffc119; border:none; padding:8px 12px; cursor:pointer; color:#000; font-weight:bold;">
-                              <?=$isBookmarked ? 'Remove Bookmark' : 'Bookmark this Anime'?>
-                          </button>
-                      <?php else: ?>
-                          <p><a href="/login.html" style="color:#ffc119">Login to bookmark this anime</a></p>
-                      <?php endif; ?>
-                  </div>
 
                 </div>
                 <div class="clr"></div>
@@ -326,7 +328,10 @@ if (!$hasSearched) {
   <script>
     function toggleBookmark(animeId) {
         var btn = $('#btn-bookmark');
-        var action = btn.text().trim() === 'Bookmark this Anime' ? 'add' : 'remove';
+        var img = btn.find('img');
+        var currentSrc = img.attr('src');
+        // Determine action based on current image source (add if showing add icon)
+        var action = currentSrc.includes('bookmart-add.png') ? 'add' : 'remove';
         var csrfToken = $('meta[name="csrf-token"]').attr('content');
 
         $.ajax({
@@ -340,11 +345,13 @@ if (!$hasSearched) {
             success: function(response) {
                 if (response.success) {
                     if (action === 'add') {
-                        btn.text('Remove Bookmark');
+                        img.attr('src', '<?=$base_url?>/assets/img/bookmart-remove.png');
+                        btn.attr('title', 'Remove Bookmark');
                     } else {
-                        btn.text('Bookmark this Anime');
+                        img.attr('src', '<?=$base_url?>/assets/img/bookmart-add.png');
+                        btn.attr('title', 'Bookmark this Anime');
                     }
-                    alert(response.message);
+                    // Force redraw or re-apply styles if needed, but inline styles should hold
                 } else {
                     alert('Action failed: ' + response.message);
                 }
