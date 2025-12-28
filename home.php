@@ -163,12 +163,8 @@ if ($searchQuery !== '') {
                                                 $totalEpisodes = $countStmt->fetchColumn();
                                                 $totalPages = ceil($totalEpisodes / $limit);
 
-                                                for ($i = 1; $i <= $totalPages; $i++) {
-                                                    if ($i > 5 && $i != $totalPages && $i != $page) continue; // Simplify for now
-                                                    $active = ($i == $page) ? 'selected' : '';
-                                                    // Use the current type in the URL
-                                                    echo "<li class='$active'><a href='?type=$type&page=$i'>$i</a></li>";
-                                                }
+                                                require_once('./app/helpers/pagination_helper.php');
+                                                echo PaginationHelper::render($page, $totalPages, ['type' => $type]);
                                                 ?>
                                             </ul>
                                         </div>
