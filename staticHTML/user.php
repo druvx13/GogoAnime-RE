@@ -33,17 +33,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 }
 
-// [GAP-003] Fetch Bookmarks
-$bmStmt = $conn->prepare("
-    SELECT a.id, a.title, a.image_url
-    FROM bookmarks b
-    JOIN anime a ON b.anime_id = a.id
-    WHERE b.user_id = :uid
-    ORDER BY b.created_at DESC
-");
-$bmStmt->execute(['uid' => $user_id]);
-$bookmarks = $bmStmt->fetchAll(PDO::FETCH_ASSOC);
-
 ?>
 <!DOCTYPE html>
 <head>
@@ -145,29 +134,6 @@ $bookmarks = $bmStmt->fetchAll(PDO::FETCH_ASSOC);
                             </div>
                         </div>
 
-                        <!-- [GAP-003] Display Bookmarks -->
-                        <div class="main_body">
-                            <div class="anime_name favorite">
-                                <i class="icongec-favorite i_pos"></i>
-                                <h2>My Bookmarks</h2>
-                            </div>
-                            <div style="padding: 20px;">
-                                <?php if(empty($bookmarks)): ?>
-                                    <p style="color: #ccc;">You haven't bookmarked any anime yet.</p>
-                                <?php else: ?>
-                                    <div class="bookmark-grid">
-                                        <?php foreach($bookmarks as $bm): ?>
-                                            <div class="bookmark-item">
-                                                <a href="/anime-details.php?id=<?=$bm['id']?>">
-                                                    <img src="<?=$bm['image_url']?>" alt="<?=htmlspecialchars($bm['title'])?>">
-                                                    <?=htmlspecialchars($bm['title'])?>
-                                                </a>
-                                            </div>
-                                        <?php endforeach; ?>
-                                    </div>
-                                <?php endif; ?>
-                            </div>
-                        </div>
                     </div>
                 </section>
                 <section class="content_right">
