@@ -13,6 +13,7 @@
 
 session_start();
 require_once('../config/db.php');
+require_once('../config/csrf.php');
 
 // Set response type to JSON
 header('Content-Type: application/json');
@@ -26,8 +27,19 @@ if (!isset($_SESSION['user_id'])) {
 
 // Handle POST requests
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Note: In a production environment, strict CSRF token validation should be added here.
-    // Currently relies on session authentication.
+    // Verify CSRF Token
+    // Check header first (common for AJAX), then POST body
+    $headers = getallheaders();
+    $token = isset($headers['X-CSRF-Token']) ? $headers['X-CSRF-Token'] : (isset($_POST['csrf_token']) ? $_POST['csrf_token'] : '');
+
+    // Normalize headers keys if needed (server dependent), but assuming standard environment for now
+    if (!$token && isset($headers['X-Csrf-Token'])) $token = $headers['X-Csrf-Token'];
+
+    if (empty($token) || empty($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $token)) {
+        http_response_code(403);
+        echo json_encode(['success' => false, 'message' => 'Invalid CSRF Token']);
+        exit;
+    }
 
     $input = json_decode(file_get_contents('php://input'), true);
     $anime_id = isset($input['anime_id']) ? (int)$input['anime_id'] : 0;
