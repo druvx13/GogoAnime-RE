@@ -148,16 +148,40 @@ if ($sort == 'recently_updated') {
     $orderBy = "ORDER BY anime.release_date DESC";
 }
 
-// Construct Query
-$sql = "SELECT DISTINCT anime.* FROM anime " . implode(" ", $joins);
-if (!empty($where)) {
-    $sql .= " WHERE " . implode(" AND ", $where);
-}
-$sql .= " " . $orderBy;
+// Pagination Logic
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+if ($page < 1) $page = 1;
+$limit = 20;
+$offset = ($page - 1) * $limit;
 
+// Construct Query
+$baseSql = "FROM anime " . implode(" ", $joins);
+if (!empty($where)) {
+    $baseSql .= " WHERE " . implode(" AND ", $where);
+}
+
+// Count Total
+$countSql = "SELECT COUNT(DISTINCT anime.id) " . $baseSql;
+try {
+    $countStmt = $conn->prepare($countSql);
+    $countStmt->execute($params);
+    $totalItems = $countStmt->fetchColumn();
+    $totalPages = ceil($totalItems / $limit);
+} catch (PDOException $e) {
+    $totalItems = 0;
+    $totalPages = 0;
+}
+
+// Fetch Results
+$sql = "SELECT DISTINCT anime.* " . $baseSql . " " . $orderBy . " LIMIT :limit OFFSET :offset";
 try {
     $stmt = $conn->prepare($sql);
-    $stmt->execute($params);
+    foreach ($params as $k => $v) {
+        $stmt->bindValue($k, $v);
+    }
+    $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+    $stmt->execute();
     $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     $results = [];
@@ -189,6 +213,18 @@ try {
                             <div class="anime_name search-result">
                                 <i class="icongec-search-result i_pos"></i>
                                 <h2>Search Result</h2>
+                                <div class="anime_name_pagination">
+                                    <div class="pagination">
+                                        <ul class='pagination-list'>
+                                            <?php
+                                            require_once('./app/helpers/pagination_helper.php');
+                                            $queryParams = $_GET;
+                                            unset($queryParams['page']);
+                                            echo PaginationHelper::render($page, $totalPages, $queryParams);
+                                            ?>
+                                        </ul>
+                                    </div>
+                                </div>
                             </div>
 
                             <!-- Filters -->
