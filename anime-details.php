@@ -19,6 +19,7 @@
 
 require_once('./app/config/info.php');
 require_once('./app/config/db.php');
+require_once('./app/config/csrf.php'); // Include CSRF config
 
 // --- SEARCH LOGIC ---
 $searchQuery = isset($_GET['keyword']) ? trim($_GET['keyword']) : '';
@@ -103,6 +104,7 @@ if (!$hasSearched) {
         var api_anclytic = 'https://ajax.gogocdn.net/anclytic-ajax.html';
   </script>
   <script type="text/javascript" src="<?=$base_url?>/assets/js/main.js"></script>
+  <meta name="csrf-token" content="<?=generate_csrf_token()?>">
   <?php require_once('./app/views/partials/advertisements/popup.html'); ?>
 </head>
 <body>
@@ -325,10 +327,15 @@ if (!$hasSearched) {
     function toggleBookmark(animeId) {
         var btn = $('#btn-bookmark');
         var action = btn.text().trim() === 'Bookmark this Anime' ? 'add' : 'remove';
+        var csrfToken = $('meta[name="csrf-token"]').attr('content');
+
         $.ajax({
             url: '/app/controllers/bookmark.php',
             type: 'POST',
             contentType: 'application/json',
+            headers: {
+                'X-CSRF-Token': csrfToken
+            },
             data: JSON.stringify({ anime_id: animeId, action: action }),
             success: function(response) {
                 if (response.success) {
