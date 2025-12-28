@@ -117,11 +117,8 @@ $animeList = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                                         <div class="pagination">
                                                                             <ul class='pagination-list'>
                                                                                 <?php
-                                                                                for ($i = 1; $i <= $totalPages; $i++) {
-                                                                                    if ($i > 5 && $i != $totalPages && $i != $page) continue;
-                                                                                    $active = ($i == $page) ? 'selected' : '';
-                                                                                    echo "<li class='$active'><a href='?page=$i'>$i</a></li>";
-                                                                                }
+                                                                                require_once('../app/helpers/pagination_helper.php');
+                                                                                echo PaginationHelper::render($page, $totalPages, []);
                                                                                 ?>
                                                                             </ul>
                                                                         </div>
