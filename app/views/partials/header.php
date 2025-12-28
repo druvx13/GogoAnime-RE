@@ -20,6 +20,7 @@ if (session_status() === PHP_SESSION_NONE) {
                         <i class="icongec-login"></i>
                         Welcome, <?= htmlspecialchars($_SESSION['user_name'] ?? 'Guest', ENT_QUOTES, 'UTF-8'); ?> |
                         <a href="/user.html">Profile</a> |
+                        <a href="/bookmark.php"><img src="<?= htmlspecialchars($base_url ?? '', ENT_QUOTES, 'UTF-8'); ?>/assets/img/bookmart-manage.png" alt="Bookmarks" style="vertical-align: middle;"></a> |
                         <a href="/app/controllers/logout.php">Logout</a>
                     <?php else: ?>
                         <i class="icongec-login"></i>
@@ -61,6 +62,7 @@ if (session_status() === PHP_SESSION_NONE) {
                 <ul>
                     <?php if (isset($_SESSION['user_id'])): ?>
                         <li class="show-mobile"><a href="/user.html">Profile</a></li>
+                        <li class="show-mobile"><a href="/bookmark.php" style="background-image: url('<?= htmlspecialchars($base_url ?? '', ENT_QUOTES, 'UTF-8'); ?>/assets/img/bookmart-manage.png'); background-position: 16px center; background-repeat: no-repeat; background-size: 20px;">Bookmarks</a></li>
                         <li class="show-mobile"><a href="/app/controllers/logout.php">Logout</a></li>
                     <?php else: ?>
                         <li class="show-mobile"><a href="/login.html">Login</a></li>
