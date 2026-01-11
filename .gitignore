@@ -1,0 +1,42 @@
+# PHP
+vendor/
+composer.lock
+*.log
+
+# Database
+*.sql.gz
+*.sql.backup
+
+# Configuration
+app/config/config.local.php
+.env
+.env.local
+
+# OS Files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Uploads & Cache
+assets/uploads/*
+!assets/uploads/.gitkeep
+cache/*
+!cache/.gitkeep
+tmp/*
+!tmp/.gitkeep
+
+# Session Files
+sessions/*
+
+# Logs
+logs/*
+*.log
+error_log
