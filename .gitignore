@@ -1,0 +1,27 @@
+# Local configuration (contains credentials)
+app/config/config.local.php
+app/config/google_auth.json
+
+# Uploaded files (user content)
+assets/uploads/covers/*
+assets/uploads/videos/*
+
+# Keep directory structure
+!assets/uploads/covers/.gitkeep
+!assets/uploads/videos/.gitkeep
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# PHP error logs
+*.log
+php_errors.log

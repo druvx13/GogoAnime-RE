@@ -1,4 +1,4 @@
-# ![GogoAnime Clone Logo](assets/img/logo.png)
+# ![GogoAnime Clone Logo](../assets/img/logo.png)
 
 # Administration Guide
 

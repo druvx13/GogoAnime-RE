@@ -1,49 +1,67 @@
 <?php 
+// For debugging
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+// Start the session at the very beginning
+session_start();
+
 require_once('../app/config/info.php');
 require_once('../app/config/db.php');
+
+// If user is already logged in, redirect to user page
+if (isset($_SESSION['user_id'])) {
+    header("Location: $base_url/user.html");
+    exit();
+}
+
+// Ensure no output is sent before headers
+ob_start();
 
 $error = '';
 $success = '';
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $name = filter_var($_POST['name'], FILTER_SANITIZE_STRING);
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['email']) && isset($_POST['password'])) {
     $email = filter_var($_POST['email'], FILTER_SANITIZE_EMAIL);
     $password = $_POST['password'];
-    $cf_password = $_POST['cf_password'];
+    $remember = isset($_POST['remember']) ? 1 : 0;
 
-    if ($password !== $cf_password) {
-        $error = "Passwords do not match";
-    } elseif (strlen($password) < 6) {
-        $error = "Password must be at least 6 characters long";
-    } else {
-        try {
-            $stmt = $conn->prepare("SELECT id FROM users WHERE email = :email");
-            $stmt->execute(['email' => $email]);
-            if ($stmt->fetch()) {
-                $error = "Email already exists";
-            } else {
-                $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-                $stmt = $conn->prepare("INSERT INTO users (name, email, password) VALUES (:name, :email, :password)");
-                $stmt->execute([
-                    'name' => $name,
-                    'email' => $email,
-                    'password' => $hashed_password
-                ]);
-                $success = "Registration successful! Redirecting to login...";
-                header("Refresh: 2; url=/login.html");
+    try {
+        $stmt = $conn->prepare("SELECT * FROM users WHERE email = :email");
+        $stmt->execute(['email' => $email]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($user && password_verify($password, $user['password'])) {
+            $_SESSION['user_id'] = $user['id'];
+            $_SESSION['user_name'] = $user['name'];
+            
+            if ($remember) {
+                $token = bin2hex(random_bytes(16));
+                $stmt = $conn->prepare("UPDATE users SET remember_token = :token WHERE id = :id");
+                $stmt->execute(['token' => $token, 'id' => $user['id']]);
+                setcookie('remember_me', $token, time() + (86400 * 30), "/");
             }
-        } catch(PDOException $e) {
-            $error = "An error occurred: " . $e->getMessage();
+            
+            // Clear output buffer and redirect
+            ob_end_clean();
+            header("Location: $base_url/user.html");
+            exit();
+        } else {
+            $error = "Invalid email or password";
         }
+    } catch(PDOException $e) {
+        $error = "An error occurred: " . $e->getMessage();
     }
 }
 ?>
+
 <!DOCTYPE html>
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="shortcut icon" href="<?=$base_url?>/assets/img/favicon.ico">
-    <title><?=$website_name?> | Register</title>
+    <title><?=$website_name?> | Login</title>
     <meta name="robots" content="index, follow" />
     <meta name="description" content="Watch anime online in English. You can watch free series and movies online and English subtitle.">
     <meta name="keywords" content="gogoanime,watch anime, anime online, free anime, english anime, sites to watch anime">
@@ -51,17 +69,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <meta property="og:site_name" content="Gogoanime" />
     <meta property="og:locale" content="en_US" />
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="<?=$website_name?> | Register" />
+    <meta property="og:title" content="<?=$website_name?> | Login" />
     <meta property="og:description" content="Watch anime online in English. You can watch free series and movies online and English subtitle.">
     <meta property="og:url" content="" />
     <meta property="og:image" content="<?=$base_url?>/assets/img/logo.png" />
     <meta property="og:image:secure_url" content="<?=$base_url?>/assets/img/logo.png" />
     <meta property="twitter:card" content="summary" />
-    <meta property="twitter:title" content="<?=$website_name?> | Register" />
+    <meta property="twitter:title" content="<?=$website_name?> | Login" />
     <meta property="twitter:description" content="Watch anime online in English. You can watch free series and movies online and English subtitle." />
     <link rel="canonical" href="<?=$base_url?><?php echo $_SERVER['REQUEST_URI'] ?>" />
     <link rel="alternate" hreflang="en-us" href="<?=$base_url?><?php echo $_SERVER['REQUEST_URI'] ?>" />
     <link rel="stylesheet" type="text/css" href="<?=$base_url?>/assets/css/style.css" />
+    <link rel="stylesheet" type="text/css" href="<?=$base_url?>/assets/css/responsive.css" />
     <link rel="stylesheet" type="text/css" href="<?=$base_url?>/assets/css/user_auth.css" />
     <link rel="stylesheet" type="text/css" href="<?=$base_url?>/assets/css/user.css" />
     <?php require_once('../app/views/partials/advertisements/popup.html'); ?>
@@ -71,7 +90,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         var base_url_cdn_api = 'https://ajax.gogocdn.net/';
         var api_anclytic = 'https://ajax.gogocdn.net/anclytic-ajax.html';
     </script>
-    <script type="text/javascript" src="<?=$base_url?>/assets/js/main.js"></script>
     <style>
         .message { text-align: center; padding: 10px; margin-bottom: 15px; }
         .error { color: red; background: #ffe6e6; }
@@ -87,28 +105,61 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <section class="content">
                 <section class="content_left">
                     <div class="main_body">
-                        <div class="anime_name reg">
-                            <i class="icongec-reg i_pos"></i>
-                            <h2>Register</h2>
+                        <div class="anime_name login">
+                            <i class="icongec-logins i_pos"></i>
+                            <h2>Login</h2>
                         </div>
                         <div class="content-login">
                             <div class="form-login">
-                                <h1>Register to Gogoanime</h1>
+                                <h1>Log in to Gogoanime</h1>
                                 <?php if($error): ?>
                                     <div class="message error"><?php echo $error; ?></div>
                                 <?php endif; ?>
                                 <?php if($success): ?>
                                     <div class="message success"><?php echo $success; ?></div>
                                 <?php endif; ?>
-                                <form method='post'>
-                                    <input type='text' name='name' placeholder='Display name' required='true' value=''>
-                                    <input type='email' name='email' placeholder='Email' required='true' value=''>
-                                    <input type='password' name='password' placeholder='Password' required='true'>
-                                    <input type='password' name='cf_password' placeholder='Retype password' required='true'>
-                                    <button type='submit'>Sign up</button>
+                                <?php
+                                $google_config_path = __DIR__ . '/../app/config/google_auth.json';
+                                $google_enabled = false;
+                                $google_login_url = '#';
+
+                                if (file_exists($google_config_path)) {
+                                    $gconfig = json_decode(file_get_contents($google_config_path), true);
+                                    if (isset($gconfig['enabled']) && $gconfig['enabled']) {
+                                        $google_enabled = true;
+                                        if (!empty($gconfig['client_id'])) {
+                                            $params = [
+                                                'client_id' => $gconfig['client_id'],
+                                                'redirect_uri' => $gconfig['redirect_uri'],
+                                                'response_type' => 'code',
+                                                'scope' => 'email profile'
+                                            ];
+                                            $google_login_url = 'https://accounts.google.com/o/oauth2/v2/auth?' . http_build_query($params);
+                                        }
+                                    }
+                                }
+                                ?>
+                                <?php if ($google_enabled): ?>
+                                <a href="<?=$google_login_url?>" class="btn-google">
+                                    <span><img src="../assets/img/google.png" alt="google" style="width: 20px; height: 20px;" /></span>
+                                    Log in with Google
+                                </a>
+                                <?php else: ?>
+                                <!-- Google Login Disabled
+                                <a href="<?=$base_url?>" class="btn-google">
+                                    <span><img src="https://gogoanime3.co/img/google.png" alt="google" /></span>
+                                    Log in with Google
+                                </a>
+                                -->
+                                <?php endif; ?>
+                                <form method="post" action="<?=$base_url?>/login.html">
+                                    <input type="email" name="email" placeholder="Email" required="required" value="">
+                                    <input type="password" name="password" placeholder="Password" required="required">
+                                    <div><input type="checkbox" name="remember" value="1"> Remember me</div>
+                                    <button type="submit">Sign in</button>
                                 </form>
                                 <a class="link-forget" href="/forget.html">Forgot password?</a>
-                                <a class="link-sign" href="/login.html">Sign in</a>
+                                <a class="link-sign" href="/register.html">Sign up</a>
                             </div>
                         </div>
                     </div>
@@ -132,7 +183,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <div class="clr"></div>
             <footer>
                 <div class="menu_bottom">
-                    <a href="/about-us.html"><h3>Abouts us</h3></a>
+                    <a href="/about-us.html"><h3>About us</h3></a>
                     <a href="/contact-us.html"><h3>Contact us</h3></a>
                     <a href="/privacy.html"><h3>Privacy</h3></a>
                 </div>
@@ -148,12 +199,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <div class="clr"></div>
 <div class="mask"></div>
 <script type="text/javascript" src="<?=$base_url?>/assets/js/files/combo.js"></script>
-    <script type="text/javascript" src="<?=$base_url?>/assets/js/files/video.js"></script>
-        <script type="text/javascript" src="<?=$base_url?>/assets/js/files/jquery.tinyscrollbar.min.js"></script>
-        <?php include('../app/views/partials/footer.php')?>
-
 <script type="text/javascript" src="<?=$base_url?>/assets/js/files/video.js"></script>
 <script type="text/javascript" src="<?=$base_url?>/assets/js/files/jquery.tinyscrollbar.min.js"></script>
 <?php include('../app/views/partials/footer.php')?>
 </body>
 </html>
+<?php
+ob_end_flush();
+?>

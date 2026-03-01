@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <head>
         <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
         <link rel="shortcut icon" href="<?=$base_url?>/assets/img/favicon.ico">
 
         <title><?=$website_name?> | Forget</title>
@@ -31,6 +31,7 @@
 
 
         <link rel="stylesheet" type="text/css" href="<?=$base_url?>/assets/css/style.css" />
+    <link rel="stylesheet" type="text/css" href="<?=$base_url?>/assets/css/responsive.css" />
         <link rel="stylesheet" type="text/css" href="<?=$base_url?>/assets/css/user_auth.css" />
     
     <link rel="stylesheet" type="text/css" href="<?=$base_url?>/assets/css/user.css" />
@@ -114,7 +115,7 @@
                 <div class="clr"></div>
 <footer>
   <div class="menu_bottom">
-    <a href="/about-us.html"><h3>Abouts us</h3></a>
+    <a href="/about-us.html"><h3>About us</h3></a>
     <a href="/contact-us.html"><h3>Contact us</h3></a>
     <a href="/privacy.html"><h3>Privacy</h3></a>
   </div>
