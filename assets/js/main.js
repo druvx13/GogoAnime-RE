@@ -6,7 +6,7 @@ $(document).ready(function () {
 
     // Login form submit handling
     $('.form-login form').submit(function () {
-        var obj = $("button[type='submit']", this);
+        const obj = $("button[type='submit']", this);
         obj.addClass('disabled').prop("disabled", true);
         setTimeout(function () {
             obj.removeClass('disabled').prop("disabled", false);
@@ -20,7 +20,7 @@ $(document).ready(function () {
     }
 
     // Mobile Menu Toggle
-    var slideMenu = $('nav.menu_top');
+    const slideMenu = $('nav.menu_top');
     $('a.menu_mobile').click(function () {
         if (slideMenu.is(':hidden')) {
             $('#off_light').css({ "display": "block" });
@@ -70,16 +70,16 @@ $(document).ready(function () {
 
     // Login Popup Validation
     $('.login-popup button').click(function (e) {
-        var email = $.trim($('input[type=email]').val());
-        var pass = $.trim($('input[type=password]').val());
+        const email = $.trim($('input[type=email]').val());
+        const pass = $.trim($('input[type=password]').val());
 
-        if (email == '') {
+        if (email === '') {
             e.preventDefault();
             $('input[type=email]').addClass('error').focus();
         } else if (!validateEmail(email)) {
             e.preventDefault();
             $('input[type=email]').addClass('error').focus();
-        } else if (pass == '') {
+        } else if (pass === '') {
             e.preventDefault();
             $('input[type=password]').addClass('error').focus();
         }
@@ -91,8 +91,8 @@ $(document).ready(function () {
 
     // Menu Active Highlighting
     $('.menu_top li:not(.user)').each(function () {
-        var href = $(this).find('a').attr('href');
-        var current_url = window.location.protocol + '//' + window.location.hostname + window.location.pathname;
+        const href = $(this).find('a').attr('href');
+        const current_url = window.location.protocol + '//' + window.location.hostname + window.location.pathname;
         if (current_url === href) {
              $('.menu_top li').removeClass('active');
              $(this).addClass('active');
@@ -104,7 +104,7 @@ $(document).ready(function () {
         e.preventDefault();
         $('.nav-tabs.ads a').removeClass('active');
         $(this).addClass('active');
-        var str = $(this).attr('data-tab');
+        const str = $(this).attr('data-tab');
         $('.main_body_black').hide();
         $('.main_body_black.' + str).show();
     });
@@ -114,8 +114,8 @@ $(document).ready(function () {
         e.preventDefault();
         $('.nav-tabs.intro a').removeClass('active');
         $(this).addClass('active');
-        var str = $(this).attr('data-tab');
-        if (str == 'recent_sub') {
+        const str = $(this).attr('data-tab');
+        if (str === 'recent_sub') {
             $('.datagrild_nav').show();
         } else {
             $('.datagrild_nav').hide();
@@ -129,7 +129,7 @@ $(document).ready(function () {
         e.preventDefault();
         $('.datagrild_nav a').removeClass('active');
         $(this).addClass('active');
-        var str = $(this).attr('data-tab');
+        const str = $(this).attr('data-tab');
         $(".content_episode.datagrild").removeClass('ver hor').addClass(str);
     });
 
@@ -140,7 +140,7 @@ $(document).ready(function () {
 
     // Chapter Select
     $('select.chapter_select').change(function () {
-        var id = $(this).val();
+        const id = $(this).val();
         window.location.href = id;
     });
 
@@ -150,8 +150,8 @@ $(document).ready(function () {
     });
 
     // Ads Positioning / Layout
-    if (jQuery(document).width() > 1000) {
-        var offset = ($(document).width() - $("#wrapper").width()) / 2 - 170;
+    if ($(document).width() > 1000) {
+        const offset = ($(document).width() - $("#wrapper").width()) / 2 - 170;
         $("#left-side-ads").css("left", offset);
         $("#right-side-ads").css("right", offset);
     } else {
@@ -188,7 +188,7 @@ function loadTopViews(obj, id) {
 }
 
 function validateEmail(email) {
-    var emailReg = /^([\w-\.]+@([\w-]+\.)+[\w-]{2,4})?$/;
+    const emailReg = /^([\w-.]+@([\w-]+\.)+[\w-]{2,4})?$/;
     return emailReg.test(email);
 }
 
@@ -200,7 +200,7 @@ function closePoup() {
 }
 
 function freload() {
-    location.reload(true);
+    location.reload();
 }
 
 // Utility for disabled state

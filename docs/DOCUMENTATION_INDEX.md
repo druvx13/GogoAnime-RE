@@ -7,7 +7,7 @@ This index serves as the central directory for all official documentation within
 ## Core Documents
 | Document | Purpose | Audience |
 | :--- | :--- | :--- |
-| [README.md](README.md) | Entry point, high-level summary. | All |
+| [README.md](../README.md) | Entry point, high-level summary. | All |
 | [SYSTEM_OVERVIEW.md](SYSTEM_OVERVIEW.md) | Description of subsystems and features. | All |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Technical design and request flow. | Developers, Architects |
 
@@ -32,8 +32,8 @@ This index serves as the central directory for all official documentation within
 ## Governance & Legal
 | Document | Purpose | Audience |
 | :--- | :--- | :--- |
-| [LICENSE](LICENSE) | Legal terms of use. | Legal |
+| [LICENSE](../LICENSE) | Legal terms of use. | Legal |
 | [NOTICE.md](NOTICE.md) | Third-party attributions. | Legal |
 | [SECURITY_DISCLOSURE.md](SECURITY_DISCLOSURE.md) | Vulnerability reporting policy. | Security Researchers |
-| [CHANGELOG.md](CHANGELOG.md) | History of changes. | All |
+| [CHANGELOG.md](../CHANGELOG.md) | History of changes. | All |
 | [VERSIONING_POLICY.md](VERSIONING_POLICY.md) | Release strategy rules. | Developers |

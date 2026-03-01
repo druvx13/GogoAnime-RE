@@ -3,7 +3,7 @@
 <html>
 <head>
     <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="shortcut icon" href="<?=$base_url?>/assets/img/favicon.ico">
 
 <title>Pages not found</title>
@@ -29,6 +29,7 @@
 <link rel="canonical" href="<?=$base_url?><?php echo $_SERVER['REQUEST_URI'] ?>" />
 <link rel="alternate" hreflang="en-us" href="<?=$base_url?><?php echo $_SERVER['REQUEST_URI'] ?>" />
 <link rel="stylesheet" type="text/css" href="<?=$base_url?>/assets/css/style.css" />
+    <link rel="stylesheet" type="text/css" href="<?=$base_url?>/assets/css/responsive.css" />
 <script type="text/javascript" src="<?=$base_url?>/assets/js/libraries/jquery.js"></script>
     <script>
         var base_url = 'https://' + document.domain + '/';

@@ -1,4 +1,4 @@
-![GogoAnime Clone Logo](logos/(HIGH-RES)GogoAnime-RE.png)
+![GogoAnime Clone Logo](assets/img/logos/(HIGH-RES)GogoAnime-RE.png)
 
 # 🎌 GogoAnime Clone System — GogoAnime-RE
 **OFFICIAL REPOSITORY DOCUMENTATION**  
@@ -85,7 +85,7 @@ Uses lightweight structure — no heavy dependencies.
 * `/app/` → Core logic and configs
 * `/assets/` → CSS/JS/Images
 * `/genre/`, `/status/`, `/sub-category/` → Routing handlers
-* `/staticHTML/` → Login & static pages
+* `/pages/` → Login, register, terms & static pages
 
 ---
 
@@ -102,7 +102,7 @@ Uses lightweight structure — no heavy dependencies.
 5. Point Document Root to repository
 6. Set writable permissions for `assets/uploads/`
 
-Full install guide → *INSTALLATION.md*
+Full install guide → *docs/INSTALLATION.md*
 
 ---
 
@@ -154,9 +154,8 @@ Config is handled via:
 
 * `app/config/db.php` — DB credentials
 * `app/config/info.php` — Website metadata
-* `app/app.json` — Deployment info
 
-More detail → *CONFIGURATION.md*
+More detail → *docs/CONFIGURATION.md*
 
 ---
 
@@ -169,7 +168,7 @@ The Admin CMS supports:
 * SEO metadata editing
 
 Access: `/admin/login.php`
-Docs → *ADMIN_GUIDE.md*
+Docs → *docs/ADMIN_GUIDE.md*
 
 ---
 
@@ -215,10 +214,10 @@ This software is **proprietary** unless specified otherwise in `LICENSE`.
 
 ## 17. References
 
-* *ARCHITECTURE.md*
-* *SYSTEM_OVERVIEW.md*
-* *DIRECTORY_STRUCTURE.md*
-* *DOCUMENTATION_INDEX.md*
+* *docs/ARCHITECTURE.md*
+* *docs/SYSTEM_OVERVIEW.md*
+* *docs/DIRECTORY_STRUCTURE.md*
+* *docs/DOCUMENTATION_INDEX.md*
 
 ---
 
